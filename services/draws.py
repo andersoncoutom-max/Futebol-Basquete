@@ -118,3 +118,25 @@ def make_bracket(draw_rows: List[Dict[str, Any]]) -> Dict[str, Any]:
         rounds.append({"name": f"Fase de {total}", "matches": create_matches(entries)})
 
     return {"count": total, "rounds": rounds}
+
+
+def make_round_robin(draw_rows: List[Dict[str, Any]]) -> Dict[str, Any]:
+    players = draw_rows[:]
+    if len(players) % 2 == 1:
+        players.append(None)
+
+    total = len(players)
+    rounds = total - 1 if total > 1 else 0
+    matches = []
+
+    for r in range(rounds):
+        for i in range(total // 2):
+            a = players[i]
+            b = players[total - 1 - i]
+            if a is None or b is None:
+                continue
+            matches.append({"round": r + 1, "a": a, "b": b})
+
+        players = [players[0]] + [players[-1]] + players[1:-1]
+
+    return {"players": len(draw_rows), "total_matches": len(matches), "matches": matches}

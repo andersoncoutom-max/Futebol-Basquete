@@ -1,18 +1,37 @@
-﻿import json
+
+import json
 import os
+import secrets
 import sqlite3
 from datetime import datetime
-from typing import Any, Dict
+from functools import wraps
+from typing import Any, Dict, Optional
 
-from flask import Flask, jsonify, render_template, request, send_file
+from flask import (
+    Flask,
+    abort,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    send_file,
+    session,
+    url_for,
+)
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from services.datasets import compute_stats, list_datasets, load_rows
-from services.draws import apply_filters, draw_assignments, make_bracket
+from services.draws import apply_filters, draw_assignments, make_bracket, make_round_robin
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(APP_DIR, "data", "history.sqlite3")
 
 app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY", "dev-secret")
+
+
+def _now_iso() -> str:
+    return datetime.utcnow().isoformat(timespec="seconds")
 
 
 def init_db() -> None:
@@ -34,6 +53,29 @@ def init_db() -> None:
         cols = {row[1] for row in cur.fetchall()}
         if "dataset_key" not in cols:
             cur.execute("ALTER TABLE draws ADD COLUMN dataset_key TEXT NOT NULL DEFAULT 'fc25'")
+
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+                is_pro INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL
+            );
+            """
+        )
+
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS shares (
+                code TEXT PRIMARY KEY,
+                created_at TEXT NOT NULL,
+                payload_json TEXT NOT NULL
+            );
+            """
+        )
+
         con.commit()
     finally:
         con.close()
@@ -45,24 +87,172 @@ def save_history(dataset_key: str, payload: Dict[str, Any]) -> None:
         cur = con.cursor()
         cur.execute(
             "INSERT INTO draws (created_at, dataset_key, payload_json) VALUES (?, ?, ?)",
-            (datetime.utcnow().isoformat(timespec="seconds"), dataset_key, json.dumps(payload, ensure_ascii=False)),
+            (_now_iso(), dataset_key, json.dumps(payload, ensure_ascii=False)),
         )
         con.commit()
     finally:
         con.close()
 
 
+def get_user_by_email(email: str) -> Optional[Dict[str, Any]]:
+    con = sqlite3.connect(DB_PATH)
+    try:
+        cur = con.cursor()
+        cur.execute("SELECT id, email, password_hash, is_pro FROM users WHERE email = ?", (email,))
+        row = cur.fetchone()
+        if not row:
+            return None
+        return {"id": row[0], "email": row[1], "password_hash": row[2], "is_pro": bool(row[3])}
+    finally:
+        con.close()
+
+
+def create_user(email: str, password: str) -> Dict[str, Any]:
+    con = sqlite3.connect(DB_PATH)
+    try:
+        cur = con.cursor()
+        cur.execute(
+            "INSERT INTO users (email, password_hash, is_pro, created_at) VALUES (?, ?, 0, ?)",
+            (email, generate_password_hash(password), _now_iso()),
+        )
+        con.commit()
+        return {"id": cur.lastrowid, "email": email, "is_pro": False}
+    finally:
+        con.close()
+
+
+def generate_share_code() -> str:
+    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    return "".join(secrets.choice(alphabet) for _ in range(6))
+
+
+def save_share(payload: Dict[str, Any]) -> str:
+    con = sqlite3.connect(DB_PATH)
+    try:
+        cur = con.cursor()
+        for _ in range(5):
+            code = generate_share_code()
+            cur.execute("SELECT code FROM shares WHERE code = ?", (code,))
+            if not cur.fetchone():
+                cur.execute(
+                    "INSERT INTO shares (code, created_at, payload_json) VALUES (?, ?, ?)",
+                    (code, _now_iso(), json.dumps(payload, ensure_ascii=False)),
+                )
+                con.commit()
+                return code
+        raise RuntimeError("Nao foi possivel gerar codigo.")
+    finally:
+        con.close()
+
+
+def load_share(code: str) -> Optional[Dict[str, Any]]:
+    con = sqlite3.connect(DB_PATH)
+    try:
+        cur = con.cursor()
+        cur.execute("SELECT payload_json FROM shares WHERE code = ?", (code,))
+        row = cur.fetchone()
+        if not row:
+            return None
+        return json.loads(row[0])
+    finally:
+        con.close()
+
+
+def login_required(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if not session.get("user_id"):
+            if request.path.startswith("/api/"):
+                return jsonify({"error": "unauthorized"}), 401
+            return redirect(url_for("login", next=request.path))
+        return fn(*args, **kwargs)
+
+    return wrapper
+
+
+init_db()
+
+
+@app.get("/login")
+def login():
+    return render_template("login.html")
+
+
+@app.post("/login")
+def login_post():
+    email = (request.form.get("email") or "").strip().lower()
+    password = request.form.get("password") or ""
+    user = get_user_by_email(email)
+    if not user or not check_password_hash(user["password_hash"], password):
+        return render_template("login.html", error="Credenciais invalidas."), 400
+    session["user_id"] = user["id"]
+    session["user_email"] = user["email"]
+    session["is_pro"] = bool(user["is_pro"])
+    return redirect(url_for("index"))
+
+
+@app.get("/register")
+def register():
+    return render_template("register.html")
+
+
+@app.post("/register")
+def register_post():
+    email = (request.form.get("email") or "").strip().lower()
+    password = request.form.get("password") or ""
+    password2 = request.form.get("password2") or ""
+    if not email or not password:
+        return render_template("register.html", error="Preencha email e senha."), 400
+    if password != password2:
+        return render_template("register.html", error="Senhas nao conferem."), 400
+    if get_user_by_email(email):
+        return render_template("register.html", error="Email ja cadastrado."), 400
+    user = create_user(email, password)
+    session["user_id"] = user["id"]
+    session["user_email"] = user["email"]
+    session["is_pro"] = False
+    return redirect(url_for("index"))
+
+
+@app.get("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+
+@app.get("/api/me")
+def api_me():
+    return jsonify(
+        {
+            "logged_in": bool(session.get("user_id")),
+            "email": session.get("user_email"),
+            "is_pro": bool(session.get("is_pro")),
+        }
+    )
+
+
 @app.get("/")
+@login_required
 def index():
     return render_template("index.html")
 
 
+@app.get("/s/<code>")
+def share_page(code: str):
+    payload = load_share(code)
+    if not payload:
+        abort(404)
+    return render_template("share.html", payload_json=json.dumps(payload, ensure_ascii=False))
+
+
 @app.get("/api/datasets")
+@login_required
 def api_datasets():
     return jsonify({"datasets": list_datasets()})
 
 
 @app.get("/api/stats")
+@login_required
 def api_stats():
     dataset = request.args.get("dataset", "fc25")
     try:
@@ -72,6 +262,7 @@ def api_stats():
 
 
 @app.get("/api/teams_info")
+@login_required
 def api_teams_info():
     dataset = request.args.get("dataset", "fc25")
     try:
@@ -94,6 +285,7 @@ def api_teams_info():
 
 
 @app.post("/api/facets")
+@login_required
 def api_facets():
     payload = request.get_json(force=True, silent=False) or {}
     dataset = payload.get("dataset") or "fc25"
@@ -124,6 +316,7 @@ def api_facets():
 
 
 @app.post("/api/pool_preview")
+@login_required
 def api_pool_preview():
     payload = request.get_json(force=True, silent=False) or {}
     dataset = payload.get("dataset") or "fc25"
@@ -158,6 +351,7 @@ def api_pool_preview():
 
 
 @app.post("/api/draw")
+@login_required
 def api_draw():
     payload = request.get_json(force=True, silent=False) or {}
     dataset = payload.get("dataset") or "fc25"
@@ -169,6 +363,10 @@ def api_draw():
     participants = [p.strip() for p in participants if p.strip()]
     if len(participants) < 1:
         return jsonify({"error": "Adicione ao menos 1 participante."}), 400
+
+    normalized = [p.lower() for p in participants]
+    if len(set(normalized)) != len(normalized):
+        return jsonify({"error": "Participantes duplicados. Remova nomes repetidos."}), 400
 
     if filters is None:
         mode = payload.get("mode", "all")
@@ -233,6 +431,7 @@ def api_draw():
 
 
 @app.post("/api/bracket")
+@login_required
 def api_bracket():
     payload = request.get_json(force=True, silent=False) or {}
     draw_rows = payload.get("draw") or []
@@ -241,7 +440,37 @@ def api_bracket():
     return jsonify(make_bracket(draw_rows))
 
 
+@app.post("/api/round_robin")
+@login_required
+def api_round_robin():
+    payload = request.get_json(force=True, silent=False) or {}
+    draw_rows = payload.get("draw") or []
+    if not isinstance(draw_rows, list) or len(draw_rows) < 2:
+        return jsonify({"error": "Envie o campo draw com ao menos 2 participantes."}), 400
+    return jsonify(make_round_robin(draw_rows))
+
+
+@app.post("/api/share")
+@login_required
+def api_share():
+    payload = request.get_json(force=True, silent=False) or {}
+    draw_rows = payload.get("draw") or []
+    if not isinstance(draw_rows, list) or len(draw_rows) < 1:
+        return jsonify({"error": "Envie um sorteio valido para compartilhar."}), 400
+    code = save_share(payload)
+    return jsonify({"code": code, "url": url_for("share_page", code=code, _external=True)})
+
+
+@app.get("/api/share/<code>")
+def api_share_get(code: str):
+    payload = load_share(code)
+    if not payload:
+        return jsonify({"error": "Nao encontrado."}), 404
+    return jsonify(payload)
+
+
 @app.post("/api/export_xlsx")
+@login_required
 def api_export_xlsx():
     payload = request.get_json(force=True, silent=False) or {}
     rows = payload.get("draw") or []

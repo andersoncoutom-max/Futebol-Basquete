@@ -1,4 +1,5 @@
-﻿const participants = [];
+
+const participants = [];
 let lastDraw = null;
 
 const PRO_DEFAULT_URL = "https://wa.me/55SEU_NUMERO?text=Quero%20assinar%20o%20Sorteio%20Pro";
@@ -11,6 +12,10 @@ const bracketState = {
   rounds: [],
   pendingByes: []
 };
+
+function normalizeName(name) {
+  return String(name || "").trim();
+}
 
 function renderParticipants() {
   const ul = document.getElementById("participantsList");
@@ -300,7 +305,7 @@ function renderBracket() {
   container.innerHTML = "";
 
   if (bracketState.rounds.length === 0) {
-    container.innerHTML = "<div class=\"muted\">Gere o sorteio para montar o chaveamento.</div>";
+    container.innerHTML = "<div class="muted">Gere o sorteio para montar o chaveamento.</div>";
     updateBracketStatus();
     drawBracketLines();
     return;
@@ -345,6 +350,32 @@ function renderBracket() {
 
   updateBracketStatus();
   requestAnimationFrame(drawBracketLines);
+}
+
+function renderRoundRobin(rr) {
+  const box = document.getElementById("rrBox");
+  const meta = document.getElementById("rrMeta");
+  const tbody = document.getElementById("rrTbody");
+  if (!box || !meta || !tbody) return;
+
+  box.classList.remove("d-none");
+  meta.textContent = `Participantes: ${rr.players}. Total de jogos: ${rr.total_matches}.`;
+  tbody.innerHTML = "";
+
+  (rr.matches || []).forEach((m, idx) => {
+    const a = m.a || {};
+    const b = m.b || {};
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${idx + 1}</td>
+      <td>${a.participant || ""}</td>
+      <td>${a.team_name || ""}</td>
+      <td>vs</td>
+      <td>${b.participant || ""}</td>
+      <td>${b.team_name || ""}</td>
+    `;
+    tbody.appendChild(tr);
+  });
 }
 
 function updateCategoryOptions() {
@@ -433,6 +464,9 @@ function setDataset(dataset) {
   loadTeamsInfo();
   resetBracket();
 
+  const rrBox = document.getElementById("rrBox");
+  if (rrBox) rrBox.classList.add("d-none");
+
   const tbody = document.getElementById("resultTbody");
   if (tbody) {
     tbody.innerHTML = "";
@@ -442,10 +476,11 @@ function setDataset(dataset) {
 }
 
 function setActionButtons(enabled) {
-  const copyBtn = document.getElementById("copyBtn");
-  const exportBtn = document.getElementById("exportBtn");
-  if (copyBtn) copyBtn.disabled = !enabled;
-  if (exportBtn) exportBtn.disabled = !enabled;
+  const ids = ["bracketBtn", "rrBtn", "copyBtn", "csvBtn", "pngBtn", "exportBtn", "shareBtn"];
+  ids.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = !enabled;
+  });
 }
 
 async function copyResult() {
@@ -454,11 +489,56 @@ async function copyResult() {
     const label = categoryLabel(row.team_type, row.gender);
     return `${row.participant};${row.team_name};${label};${row.overall}`;
   });
-  const text = ["PARTICIPANTE;TIME;CATEGORIA;OVR", ...lines].join("\n");
+  const text = ["PARTICIPANTE;TIME;CATEGORIA;OVR", ...lines].join("
+");
   try {
     await navigator.clipboard.writeText(text);
   } catch {
     showError("Nao foi possivel copiar. Verifique as permissoes do navegador.");
+  }
+}
+
+function exportCsv() {
+  if (!lastDraw) return;
+  const lines = (lastDraw.draw || []).map((row) => {
+    const label = categoryLabel(row.team_type, row.gender);
+    return `${row.participant};${row.team_name};${label};${row.overall};${row.attack};${row.midfield};${row.defence}`;
+  });
+  const text = ["PARTICIPANTE;TIME;CATEGORIA;OVR;ATT;MID;DEF", ...lines].join("
+");
+  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "sorteio.csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function exportPng() {
+  if (!lastDraw) return;
+  const target = document.getElementById("shareCapture");
+  if (!target || typeof html2canvas === "undefined") {
+    showError("PNG indisponivel no momento.");
+    return;
+  }
+  try {
+    const canvas = await html2canvas(target, { backgroundColor: null, scale: 2 });
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "sorteio.png";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+  } catch {
+    showError("Falha ao gerar PNG.");
   }
 }
 
@@ -491,11 +571,38 @@ async function exportXlsx() {
 }
 
 async function shareLink() {
-  const url = window.location.href;
+  if (!lastDraw) return;
+  clearError();
   try {
+    const r = await fetch("/api/share", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(lastDraw)
+    });
+    const j = await r.json();
+    if (!r.ok) {
+      showError(j.error || "Erro ao compartilhar.");
+      return;
+    }
+    const url = j.url || window.location.href;
     await navigator.clipboard.writeText(url);
   } catch {
     showError("Nao foi possivel copiar o link.");
+  }
+}
+
+async function runRoundRobin() {
+  if (!lastDraw) return;
+  clearError();
+  try {
+    const rr = await fetch("/api/round_robin", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ draw: lastDraw.draw || [] })
+    }).then((r) => r.json());
+    renderRoundRobin(rr);
+  } catch {
+    showError("Erro ao gerar todos contra todos.");
   }
 }
 
@@ -534,8 +641,13 @@ const participantInput = document.getElementById("participantInput");
 const addParticipantBtn = document.getElementById("addParticipantBtn");
 if (addParticipantBtn && participantInput) {
   addParticipantBtn.addEventListener("click", () => {
-    const name = (participantInput.value || "").trim();
+    const name = normalizeName(participantInput.value);
     if (!name) return;
+    const exists = participants.some((p) => p.toLowerCase() === name.toLowerCase());
+    if (exists) {
+      showError("Participante duplicado.");
+      return;
+    }
     participants.push(name);
     participantInput.value = "";
     renderParticipants();
@@ -552,10 +664,14 @@ if (importBtn) {
     const bulk = document.getElementById("bulkInput");
     if (!bulk) return;
     const lines = (bulk.value || "")
-      .split(/\r?\n/)
-      .map((s) => s.trim())
+      .split(/?
+/)
+      .map((s) => normalizeName(s))
       .filter(Boolean);
-    lines.forEach((name) => participants.push(name));
+    lines.forEach((name) => {
+      const exists = participants.some((p) => p.toLowerCase() === name.toLowerCase());
+      if (!exists) participants.push(name);
+    });
     bulk.value = "";
     renderParticipants();
   });
@@ -649,8 +765,22 @@ if (drawBtn) {
   });
 }
 
+const bracketBtn = document.getElementById("bracketBtn");
+if (bracketBtn) bracketBtn.addEventListener("click", () => {
+  if (lastDraw) buildBracket(lastDraw.draw || []);
+});
+
+const rrBtn = document.getElementById("rrBtn");
+if (rrBtn) rrBtn.addEventListener("click", runRoundRobin);
+
 const copyBtn = document.getElementById("copyBtn");
 if (copyBtn) copyBtn.addEventListener("click", copyResult);
+
+const csvBtn = document.getElementById("csvBtn");
+if (csvBtn) csvBtn.addEventListener("click", exportCsv);
+
+const pngBtn = document.getElementById("pngBtn");
+if (pngBtn) pngBtn.addEventListener("click", exportPng);
 
 const exportBtn = document.getElementById("exportBtn");
 if (exportBtn) exportBtn.addEventListener("click", exportXlsx);
