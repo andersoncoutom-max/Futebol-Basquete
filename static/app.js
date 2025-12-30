@@ -305,7 +305,7 @@ function renderBracket() {
   container.innerHTML = "";
 
   if (bracketState.rounds.length === 0) {
-    container.innerHTML = "<div class="muted">Gere o sorteio para montar o chaveamento.</div>";
+    container.innerHTML = "<div class=\"muted\">Gere o sorteio para montar o chaveamento.</div>";
     updateBracketStatus();
     drawBracketLines();
     return;
@@ -489,8 +489,7 @@ async function copyResult() {
     const label = categoryLabel(row.team_type, row.gender);
     return `${row.participant};${row.team_name};${label};${row.overall}`;
   });
-  const text = ["PARTICIPANTE;TIME;CATEGORIA;OVR", ...lines].join("
-");
+  const text = ["PARTICIPANTE;TIME;CATEGORIA;OVR", ...lines].join("\n");
   try {
     await navigator.clipboard.writeText(text);
   } catch {
@@ -504,8 +503,7 @@ function exportCsv() {
     const label = categoryLabel(row.team_type, row.gender);
     return `${row.participant};${row.team_name};${label};${row.overall};${row.attack};${row.midfield};${row.defence}`;
   });
-  const text = ["PARTICIPANTE;TIME;CATEGORIA;OVR;ATT;MID;DEF", ...lines].join("
-");
+  const text = ["PARTICIPANTE;TIME;CATEGORIA;OVR;ATT;MID;DEF", ...lines].join("\n");
   const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -664,7 +662,8 @@ if (importBtn) {
     const bulk = document.getElementById("bulkInput");
     if (!bulk) return;
     const lines = (bulk.value || "")
-      .split(/?
+      .split(/
+?
 /)
       .map((s) => normalizeName(s))
       .filter(Boolean);
