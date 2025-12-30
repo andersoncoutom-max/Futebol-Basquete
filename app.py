@@ -7,7 +7,7 @@ from typing import Any, Dict
 from flask import Flask, jsonify, render_template, request, send_file
 
 from services.datasets import compute_stats, list_datasets, load_rows
-from services.draws import apply_filters, draw_assignments, make_bracket, make_round_robin
+from services.draws import apply_filters, draw_assignments, make_bracket
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(APP_DIR, "data", "history.sqlite3")
@@ -20,8 +20,6 @@ def init_db() -> None:
     con = sqlite3.connect(DB_PATH)
     try:
         cur = con.cursor()
-
-        # Histórico de sorteios
         cur.execute(
             """
             CREATE TABLE IF NOT EXISTS draws (
@@ -32,88 +30,31 @@ def init_db() -> None:
             );
             """
         )
-
-        # Compatibilidade: caso venha de uma versão antiga sem dataset_key
         cur.execute("PRAGMA table_info(draws)")
         cols = {row[1] for row in cur.fetchall()}
         if "dataset_key" not in cols:
             cur.execute("ALTER TABLE draws ADD COLUMN dataset_key TEXT NOT NULL DEFAULT 'fc25'")
-
-        # Entitlements temporários (rewarded)
-        cur.execute(
-            """
-            CREATE TABLE IF NOT EXISTS entitlements (
-                client_id TEXT NOT NULL,
-                feature TEXT NOT NULL,
-                expires_at INTEGER NOT NULL,
-                created_at INTEGER NOT NULL,
-                PRIMARY KEY (client_id, feature)
-            );
-            """
-        )
-
         con.commit()
     finally:
         con.close()
 
 
-init_db()
+def save_history(dataset_key: str, payload: Dict[str, Any]) -> None:
+    con = sqlite3.connect(DB_PATH)
+    try:
+        cur = con.cursor()
+        cur.execute(
+            "INSERT INTO draws (created_at, dataset_key, payload_json) VALUES (?, ?, ?)",
+            (datetime.utcnow().isoformat(timespec="seconds"), dataset_key, json.dumps(payload, ensure_ascii=False)),
+        )
+        con.commit()
+    finally:
+        con.close()
 
 
 @app.get("/")
-def home():
+def index():
     return render_template("index.html")
-
-
-def _now_ts() -> int:
-    return int(datetime.utcnow().timestamp())
-
-
-def grant_entitlement(client_id: str, feature: str, seconds: int) -> Dict[str, Any]:
-    now = _now_ts()
-    expires = now + int(seconds)
-    con = sqlite3.connect(DB_PATH)
-    try:
-        cur = con.cursor()
-        cur.execute(
-            "INSERT OR REPLACE INTO entitlements (client_id, feature, expires_at, created_at) VALUES (?, ?, ?, ?)",
-            (client_id, feature, expires, now),
-        )
-        con.commit()
-    finally:
-        con.close()
-    return {"client_id": client_id, "feature": feature, "expires_at": expires}
-
-
-def has_entitlement(client_id: str, feature: str) -> bool:
-    now = _now_ts()
-    con = sqlite3.connect(DB_PATH)
-    try:
-        cur = con.cursor()
-        cur.execute(
-            "SELECT expires_at FROM entitlements WHERE client_id = ? AND feature = ?",
-            (client_id, feature),
-        )
-        row = cur.fetchone()
-        if not row:
-            return False
-        expires = int(row[0])
-        return expires > now
-    finally:
-        con.close()
-
-
-def cleanup_entitlements() -> None:
-    now = _now_ts()
-    con = sqlite3.connect(DB_PATH)
-    try:
-        cur = con.cursor()
-        cur.execute("DELETE FROM entitlements WHERE expires_at <= ?", (now,))
-        con.commit()
-    finally:
-        con.close()
-
-
 
 
 @app.get("/api/datasets")
@@ -299,42 +240,6 @@ def api_bracket():
         return jsonify({"error": "Envie o campo draw com ao menos 2 participantes."}), 400
     return jsonify(make_bracket(draw_rows))
 
-@app.post("/api/round_robin")
-def api_round_robin():
-    payload = request.get_json(force=True, silent=False) or {}
-    draw_rows = payload.get("draw") or []
-    if not isinstance(draw_rows, list) or len(draw_rows) < 2:
-        return jsonify({"error": "Envie o campo draw com ao menos 2 participantes."}), 400
-    return jsonify(make_round_robin(draw_rows))
-
-
-
-@app.post("/api/entitlement/check")
-def api_entitlement_check():
-    payload = request.get_json(force=True, silent=False) or {}
-    client_id = str(payload.get("client_id") or "").strip()
-    feature = str(payload.get("feature") or "").strip()
-    if not client_id or not feature:
-        return jsonify({"error": "client_id e feature são obrigatórios."}), 400
-    cleanup_entitlements()
-    return jsonify({"client_id": client_id, "feature": feature, "allowed": has_entitlement(client_id, feature)})
-
-
-@app.post("/api/entitlement/grant")
-def api_entitlement_grant():
-    """
-    Modo desenvolvimento: simula o rewarded.
-    Em produção, este endpoint deve ser acionado somente após validação do provedor de anúncios.
-    """
-    payload = request.get_json(force=True, silent=False) or {}
-    client_id = str(payload.get("client_id") or "").strip()
-    feature = str(payload.get("feature") or "").strip()
-    seconds = int(payload.get("seconds") or 900)  # 15 min padrão
-    if not client_id or not feature:
-        return jsonify({"error": "client_id e feature são obrigatórios."}), 400
-    cleanup_entitlements()
-    return jsonify({"granted": True, **grant_entitlement(client_id, feature, seconds)})
-
 
 @app.post("/api/export_xlsx")
 def api_export_xlsx():
@@ -396,7 +301,6 @@ def api_export_xlsx():
 
 
 if __name__ == "__main__":
-    # Execução local (desenvolvimento)
     port = int(os.getenv("PORT", "5000"))
     debug = os.getenv("FLASK_DEBUG", "1") == "1"
     init_db()
