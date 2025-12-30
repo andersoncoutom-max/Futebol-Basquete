@@ -331,6 +331,10 @@
       .hero-grid { grid-template-columns: 1fr; }
     }
   </style>
+
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <meta name="theme-color" content="#111827">
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
 </head>
 <body>
   <div class="shell">
@@ -514,5 +518,11 @@
   </div>
 
   <script src="/static/app.js"></script>
+
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/static/sw.js");
+  }
+</script>
 </body>
 </html>
