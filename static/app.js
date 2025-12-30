@@ -662,9 +662,7 @@ if (importBtn) {
     const bulk = document.getElementById("bulkInput");
     if (!bulk) return;
     const lines = (bulk.value || "")
-      .split(/
-?
-/)
+      .split(/\r?\n/)
       .map((s) => normalizeName(s))
       .filter(Boolean);
     lines.forEach((name) => {
