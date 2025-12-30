@@ -1,4 +1,7 @@
 ﻿const participants = [];
+let lastDraw = null;
+
+const PRO_DEFAULT_URL = "https://wa.me/55SEU_NUMERO?text=Quero%20assinar%20o%20Sorteio%20Pro";
 
 const datasetState = {
   current: "fc25"
@@ -11,6 +14,9 @@ const bracketState = {
 
 function renderParticipants() {
   const ul = document.getElementById("participantsList");
+  const count = document.getElementById("participantCount");
+  if (count) count.textContent = String(participants.length);
+
   ul.innerHTML = "";
 
   participants.forEach((name, idx) => {
@@ -386,26 +392,117 @@ function setDataset(dataset) {
   if (tbody) {
     tbody.innerHTML = "";
   }
+  lastDraw = null;
+  setActionButtons(false);
 }
 
+function setActionButtons(enabled) {
+  const copyBtn = document.getElementById("copyBtn");
+  const exportBtn = document.getElementById("exportBtn");
+  if (copyBtn) copyBtn.disabled = !enabled;
+  if (exportBtn) exportBtn.disabled = !enabled;
+}
 
-document.getElementById("addParticipantBtn").addEventListener("click", () => {
-  const input = document.getElementById("participantInput");
-  const name = (input.value || "").trim();
-  if (!name) return;
-  participants.push(name);
-  input.value = "";
-  renderParticipants();
-});
+async function copyResult() {
+  if (!lastDraw) return;
+  const lines = (lastDraw.draw || []).map((row) => {
+    const label = categoryLabel(row.team_type, row.gender);
+    return `${row.participant};${row.team_name};${label};${row.overall}`;
+  });
+  const text = ["PARTICIPANTE;TIME;CATEGORIA;OVR", ...lines].join("\n");
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    showError("Nao foi possivel copiar. Verifique as permissoes do navegador.");
+  }
+}
 
-document.getElementById("participantInput").addEventListener("keydown", (e) => {
-  if (e.key === "Enter") document.getElementById("addParticipantBtn").click();
-});
+async function exportXlsx() {
+  if (!lastDraw) return;
+  clearError();
+  try {
+    const r = await fetch("/api/export_xlsx", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(lastDraw)
+    });
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({}));
+      showError(j.error || "Erro ao exportar.");
+      return;
+    }
+    const blob = await r.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "sorteio.xlsx";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch {
+    showError("Falha ao exportar.");
+  }
+}
 
-document.getElementById("clearParticipantsBtn").addEventListener("click", () => {
-  participants.length = 0;
-  renderParticipants();
-});
+async function shareLink() {
+  const url = window.location.href;
+  try {
+    await navigator.clipboard.writeText(url);
+  } catch {
+    showError("Nao foi possivel copiar o link.");
+  }
+}
+
+function setupProLinks() {
+  const links = document.querySelectorAll(".js-pro-link");
+  links.forEach((el) => {
+    const custom = el.getAttribute("data-whatsapp");
+    const href = custom && custom.trim() ? custom.trim() : PRO_DEFAULT_URL;
+    el.setAttribute("href", href);
+    el.setAttribute("target", "_blank");
+    el.setAttribute("rel", "noopener");
+  });
+}
+
+const participantInput = document.getElementById("participantInput");
+const addParticipantBtn = document.getElementById("addParticipantBtn");
+if (addParticipantBtn && participantInput) {
+  addParticipantBtn.addEventListener("click", () => {
+    const name = (participantInput.value || "").trim();
+    if (!name) return;
+    participants.push(name);
+    participantInput.value = "";
+    renderParticipants();
+  });
+
+  participantInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") addParticipantBtn.click();
+  });
+}
+
+const importBtn = document.getElementById("importBtn");
+if (importBtn) {
+  importBtn.addEventListener("click", () => {
+    const bulk = document.getElementById("bulkInput");
+    if (!bulk) return;
+    const lines = (bulk.value || "")
+      .split(/\r?\n/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    lines.forEach((name) => participants.push(name));
+    bulk.value = "";
+    renderParticipants();
+  });
+}
+
+const clearBtn = document.getElementById("clearParticipantsBtn");
+if (clearBtn) {
+  clearBtn.addEventListener("click", () => {
+    participants.length = 0;
+    renderParticipants();
+  });
+}
 
 const nextRoundBtn = document.getElementById("nextRoundBtn");
 if (nextRoundBtn) {
@@ -427,55 +524,76 @@ if (datasetNbaBtn) {
   datasetNbaBtn.addEventListener("click", () => setDataset("nba"));
 }
 
-document.getElementById("drawBtn").addEventListener("click", async () => {
-  clearError();
-  const mode = document.getElementById("modeSelect").value;
-  const topN = parseInt(document.getElementById("topNInput").value || "10", 10);
-  const category = document.getElementById("categorySelect").value;
+const drawBtn = document.getElementById("drawBtn");
+if (drawBtn) {
+  drawBtn.addEventListener("click", async () => {
+    clearError();
+    const mode = document.getElementById("modeSelect").value;
+    const topN = parseInt(document.getElementById("topNInput").value || "10", 10);
+    const category = document.getElementById("categorySelect").value;
 
-  try {
-    const r = await fetch("/api/draw", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({
-        dataset: datasetState.current,
-        participants,
-        mode,
-        top_n: topN,
-        category
-      })
-    });
-
-    const j = await r.json();
-    if (!r.ok) {
-      showError(j.error || "Erro ao sortear.");
+    if (participants.length === 0) {
+      showError("Adicione ao menos 1 participante.");
       return;
     }
 
-    const tbody = document.getElementById("resultTbody");
-    tbody.innerHTML = "";
-    j.draw.forEach(row => {
-      const tr = document.createElement("tr");
-      const label = categoryLabel(row.team_type, row.gender);
-      tr.innerHTML = `
-        <td>${row.participant}</td>
-        <td>${row.team_name}</td>
-        <td>${label}</td>
-        <td>${row.overall}</td>
-        <td>${row.attack}</td>
-        <td>${row.midfield}</td>
-        <td>${row.defence}</td>
-      `;
-      tbody.appendChild(tr);
-    });
+    try {
+      const r = await fetch("/api/draw", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          dataset: datasetState.current,
+          participants,
+          mode,
+          top_n: topN,
+          category
+        })
+      });
 
-    buildBracket(j.draw);
+      const j = await r.json();
+      if (!r.ok) {
+        showError(j.error || "Erro ao sortear.");
+        return;
+      }
 
-  } catch (e) {
-    showError("Falha de comunicacao com o servidor.");
-  }
-});
+      lastDraw = j;
+      setActionButtons(true);
+
+      const tbody = document.getElementById("resultTbody");
+      tbody.innerHTML = "";
+      j.draw.forEach((row) => {
+        const tr = document.createElement("tr");
+        const label = categoryLabel(row.team_type, row.gender);
+        tr.innerHTML = `
+          <td>${row.participant}</td>
+          <td>${row.team_name}</td>
+          <td>${label}</td>
+          <td>${row.overall}</td>
+          <td>${row.attack}</td>
+          <td>${row.midfield}</td>
+          <td>${row.defence}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      buildBracket(j.draw);
+
+    } catch (e) {
+      showError("Falha de comunicacao com o servidor.");
+    }
+  });
+}
+
+const copyBtn = document.getElementById("copyBtn");
+if (copyBtn) copyBtn.addEventListener("click", copyResult);
+
+const exportBtn = document.getElementById("exportBtn");
+if (exportBtn) exportBtn.addEventListener("click", exportXlsx);
+
+const shareBtn = document.getElementById("shareBtn");
+if (shareBtn) shareBtn.addEventListener("click", shareLink);
 
 setDataset("fc25");
 renderParticipants();
 renderBracket();
+setupProLinks();
