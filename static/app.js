@@ -248,6 +248,52 @@ function renderEntry(entry, isWinner) {
   return btn;
 }
 
+function drawBracketLines() {
+  const svg = document.getElementById("bracketLines");
+  const grid = document.getElementById("bracketContainer");
+  if (!svg || !grid) return;
+
+  const wrap = grid.parentElement;
+  const rect = wrap.getBoundingClientRect();
+  svg.setAttribute("width", rect.width);
+  svg.setAttribute("height", rect.height);
+  svg.innerHTML = "";
+
+  const columns = Array.from(grid.children);
+  if (columns.length < 2) return;
+
+  for (let c = 0; c < columns.length - 1; c += 1) {
+    const col = columns[c];
+    const nextCol = columns[c + 1];
+    const matches = Array.from(col.querySelectorAll(".bracket-match"));
+    const nextMatches = Array.from(nextCol.querySelectorAll(".bracket-match"));
+
+    matches.forEach((match, idx) => {
+      const matchRect = match.getBoundingClientRect();
+      const startX = matchRect.right - rect.left + wrap.scrollLeft + 6;
+      const startY = matchRect.top - rect.top + matchRect.height / 2 + wrap.scrollTop;
+
+      const nextMatch = nextMatches[Math.floor(idx / 2)];
+      if (!nextMatch) return;
+      const nextRect = nextMatch.getBoundingClientRect();
+      const endX = nextRect.left - rect.left + wrap.scrollLeft - 6;
+      const endY = nextRect.top - rect.top + nextRect.height / 2 + wrap.scrollTop;
+
+      const midX = (startX + endX) / 2;
+
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute(
+        "d",
+        `M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`
+      );
+      path.setAttribute("stroke", "rgba(15, 23, 42, 0.25)");
+      path.setAttribute("stroke-width", "2");
+      path.setAttribute("fill", "none");
+      svg.appendChild(path);
+    });
+  }
+}
+
 function renderBracket() {
   const container = document.getElementById("bracketContainer");
   if (!container) return;
@@ -256,11 +302,9 @@ function renderBracket() {
   if (bracketState.rounds.length === 0) {
     container.innerHTML = "<div class=\"muted\">Gere o sorteio para montar o chaveamento.</div>";
     updateBracketStatus();
+    drawBracketLines();
     return;
   }
-
-  const grid = document.createElement("div");
-  grid.className = "bracket-grid";
 
   bracketState.rounds.forEach((round, rIdx) => {
     const col = document.createElement("div");
@@ -296,11 +340,11 @@ function renderBracket() {
       col.appendChild(card);
     });
 
-    grid.appendChild(col);
+    container.appendChild(col);
   });
 
-  container.appendChild(grid);
   updateBracketStatus();
+  requestAnimationFrame(drawBracketLines);
 }
 
 function updateCategoryOptions() {
@@ -466,6 +510,26 @@ function setupProLinks() {
   });
 }
 
+function setupReveal() {
+  const items = document.querySelectorAll(".reveal");
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.15 }
+  );
+
+  items.forEach((item, idx) => {
+    item.style.transitionDelay = `${idx * 60}ms`;
+    observer.observe(item);
+  });
+}
+
 const participantInput = document.getElementById("participantInput");
 const addParticipantBtn = document.getElementById("addParticipantBtn");
 if (addParticipantBtn && participantInput) {
@@ -594,7 +658,10 @@ if (exportBtn) exportBtn.addEventListener("click", exportXlsx);
 const shareBtn = document.getElementById("shareBtn");
 if (shareBtn) shareBtn.addEventListener("click", shareLink);
 
+window.addEventListener("resize", drawBracketLines);
+
 setDataset("fc25");
 renderParticipants();
 renderBracket();
 setupProLinks();
+setupReveal();
