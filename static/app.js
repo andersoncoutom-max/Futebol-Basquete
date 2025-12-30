@@ -264,9 +264,10 @@ function renderBracket() {
 
   bracketState.rounds.forEach((round, rIdx) => {
     const col = document.createElement("div");
-    col.className = "bracket-round";
+    col.className = "bracket-column";
 
-    const title = document.createElement("h6");
+    const title = document.createElement("div");
+    title.className = "bracket-round-title";
     title.textContent = round.name;
     col.appendChild(title);
 
@@ -380,8 +381,8 @@ function setDataset(dataset) {
   datasetState.current = dataset;
   const body = document.body;
   if (body) {
-    body.classList.remove("theme-fc", "theme-nba");
-    body.classList.add(dataset === "nba" ? "theme-nba" : "theme-fc");
+    body.classList.remove("theme-nba");
+    if (dataset === "nba") body.classList.add("theme-nba");
   }
   updateDatasetTabs();
   updateCategoryOptions();
