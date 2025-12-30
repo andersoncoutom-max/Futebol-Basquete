@@ -1,0 +1,44 @@
+{
+  "datasets": [
+    {
+      "key": "fc25",
+      "name": "EA FC 25",
+      "sport": "soccer",
+      "csv_path": "data/teams_fc25.csv",
+      "rating_fields": {
+        "overall": "overall",
+        "attack": "attack",
+        "midfield": "midfield",
+        "defence": "defence"
+      },
+      "filters": {
+        "team_types": [
+          "CLUB",
+          "NATIONAL"
+        ],
+        "genders": [
+          "MEN",
+          "WOMEN"
+        ],
+        "competition": true,
+        "country": true
+      }
+    },
+    {
+      "key": "nba2k25",
+      "name": "NBA 2K25",
+      "sport": "basketball",
+      "csv_path": "data/teams_nba2k25.csv",
+      "rating_fields": {
+        "overall": "overall",
+        "attack": "offense",
+        "midfield": "",
+        "defence": "defense"
+      },
+      "filters": {
+        "conference": true,
+        "division": true
+      }
+    }
+  ]
+}

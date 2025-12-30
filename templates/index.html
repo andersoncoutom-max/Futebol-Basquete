@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row g-3">
+  <div class="col-12 col-xl-4">
+    <div class="card card-soft">
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <div>
+            <div class="text-muted small">Base de dados</div>
+            <div class="fw-semibold" id="statsLine">Carregando...</div>
+          </div>
+          <span class="badge text-bg-secondary" id="poolCount">0</span>
+        </div>
+
+        <hr class="my-3">
+
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <h2 class="h6 mb-0">Participantes</h2>
+          <span class="badge text-bg-primary" id="participantsCount">0</span>
+        </div>
+
+        <div class="input-group mb-2">
+          <input id="participantInput" class="form-control" placeholder="Digite um nome e pressione Enter">
+          <button class="btn btn-primary" id="addParticipantBtn"><i class="bi bi-plus-lg"></i></button>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small text-muted mb-1">Importar lista (um por linha)</label>
+          <textarea class="form-control" id="bulkInput" rows="4" placeholder="Anderson&#10;Matheus&#10;Samuel"></textarea>
+          <div class="d-flex gap-2 mt-2">
+            <button class="btn btn-outline-primary btn-sm" id="importBtn"><i class="bi bi-upload"></i> Importar</button>
+            <button class="btn btn-outline-secondary btn-sm" id="clearParticipantsBtn"><i class="bi bi-trash"></i> Limpar</button>
+          </div>
+        </div>
+
+        <ul class="list-group list-group-flush" id="participantsList"></ul>
+
+        <hr class="my-3">
+
+        <h2 class="h6 mb-2">Filtros</h2>
+
+        <div id="filtersSoccer" class="d-none">
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label small">Tipo</label>
+              <select class="form-select form-select-sm" id="teamTypeSelect" multiple></select>
+            </div>
+            <div class="col-6">
+              <label class="form-label small">Gênero</label>
+              <select class="form-select form-select-sm" id="genderSelect" multiple></select>
+            </div>
+            <div class="col-12">
+              <label class="form-label small">Competição</label>
+              <select class="form-select form-select-sm" id="competitionSelect" multiple></select>
+            </div>
+            <div class="col-12">
+              <label class="form-label small">País</label>
+              <select class="form-select form-select-sm" id="countrySelect" multiple></select>
+            </div>
+          </div>
+        </div>
+
+        <div id="filtersBasket" class="d-none">
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label small">Conferência</label>
+              <select class="form-select form-select-sm" id="conferenceSelect" multiple></select>
+            </div>
+            <div class="col-6">
+              <label class="form-label small">Divisão</label>
+              <select class="form-select form-select-sm" id="divisionSelect" multiple></select>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-3">
+          <label class="form-label small">Overall mínimo: <span class="mono" id="overallMinLabel">0</span></label>
+          <input type="range" class="form-range" min="0" max="99" value="0" id="overallMin">
+        </div>
+
+        <div class="row g-2 mt-2">
+          <div class="col-6">
+            <label class="form-label small">Modo</label>
+            <select class="form-select form-select-sm" id="modeSelect">
+              <option value="all" selected>Todos</option>
+              <option value="top">Top N</option>
+            </select>
+          </div>
+          <div class="col-6">
+            <label class="form-label small">N</label>
+            <input class="form-control form-control-sm" id="topN" type="number" min="1" value="20">
+          </div>
+        </div>
+
+        <div class="form-check mt-2">
+          <input class="form-check-input" type="checkbox" id="includeInvalid">
+          <label class="form-check-label small" for="includeInvalid">Incluir entradas inválidas</label>
+        </div>
+
+        <div class="d-grid gap-2 mt-3">
+          <button class="btn btn-outline-primary" id="previewBtn"><i class="bi bi-eye"></i> Pré-visualizar pool</button>
+          <button class="btn btn-success" id="drawBtn"><i class="bi bi-shuffle"></i> Gerar sorteio</button>
+        </div>
+
+        <div class="alert alert-danger mt-3 d-none" id="errorBox"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-xl-8">
+    <div class="card card-soft mb-3">
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between">
+          <h2 class="h6 mb-0">Pool selecionado</h2>
+          <span class="badge text-bg-secondary" id="poolCount2">0</span>
+        </div>
+        <div class="text-muted small mt-1">Amostra do pool após filtros.</div>
+
+        <div class="table-responsive mt-3">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>OVR</th>
+                <th>ATT/OF</th>
+                <th>MID</th>
+                <th>DEF</th>
+                <th class="col-min">Tipo</th>
+                <th class="col-min">Gênero</th>
+                <th class="col-min">País</th>
+                <th class="col-min">Conf</th>
+                <th class="col-min">Div</th>
+              </tr>
+            </thead>
+            <tbody id="poolTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-soft">
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between">
+          <h2 class="h6 mb-0">Resultado</h2>
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary btn-sm" id="copyBtn" disabled><i class="bi bi-clipboard"></i> Copiar</button>
+            <button class="btn btn-outline-secondary btn-sm" id="exportBtn" disabled><i class="bi bi-file-earmark-excel"></i> Exportar</button>
+            <button class="btn btn-outline-secondary btn-sm" id="rrBtn" disabled><i class="bi bi-list-ol"></i> Todos contra todos</button>
+            <button class="btn btn-outline-primary btn-sm" id="bracketBtn" disabled><i class="bi bi-diagram-3"></i> Gerar chaveamento</button>
+          </div>
+        </div>
+
+        <div class="table-responsive mt-3">
+          <table class="table table-striped align-middle">
+            <thead>
+              <tr>
+                <th>Participante</th>
+                <th>Time</th>
+                <th>OVR</th>
+                <th>ATT/OF</th>
+                <th>MID</th>
+                <th>DEF</th>
+              </tr>
+            </thead>
+            <tbody id="resultTbody"></tbody>
+          </table>
+        </div>
+
+        <div class="text-muted small" id="resultMeta"></div>
+
+
+        <div class="mt-3 d-none" id="rrBox">
+          <h3 class="h6 mb-2">Todos contra todos</h3>
+          <div class="text-muted small mb-2" id="rrMeta"></div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Jogador A</th>
+                  <th>Time A</th>
+                  <th class="mono text-muted">vs</th>
+                  <th>Jogador B</th>
+                  <th>Time B</th>
+                </tr>
+              </thead>
+              <tbody id="rrTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+
+        <div class="mt-3 d-none" id="bracketBox">
+          <h3 class="h6 mb-2">Chaveamento</h3>
+          <div class="text-muted small mb-2" id="bracketMeta"></div>
+          <div id="bracketRounds"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,29 @@
+:root{
+  --bg: #f6f7fb;
+  --card: #ffffff;
+  --muted: #6c757d;
+  --shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+  --radius: 18px;
+}
+body{ background: var(--bg); }
+.card-soft{ border: 0; border-radius: var(--radius); background: var(--card); box-shadow: var(--shadow); }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+.col-min{ white-space: nowrap; }
+.table thead th{ white-space: nowrap; }
+.dark{
+  --bg: #0b1220;
+  --card: #111a2e;
+  --muted: #a0aec0;
+  color: #e2e8f0;
+}
+.dark .navbar{ background: #0f172a !important; }
+.dark .navbar .navbar-brand, .dark .navbar .nav-link { color: #e2e8f0 !important; }
+.dark .border-bottom{ border-color: rgba(226,232,240,0.12) !important; }
+.dark .table{ color: #e2e8f0; }
+.dark .table-striped>tbody>tr:nth-of-type(odd)>*{ color: #e2e8f0; }
+
+.progress-bar{ transition: width 0.3s ease; }
+
+.dark .modal-content{ background: var(--card); color: #e2e8f0; }
+
+.dark .bg-body-tertiary{ background: rgba(226,232,240,0.06) !important; }
