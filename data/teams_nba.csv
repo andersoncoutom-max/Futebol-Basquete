@@ -1,0 +1,43 @@
+team_id,team_name,team_type,gender,competition,country,conference,division,league,overall,attack,midfield,defence,avg_age,stadium_capacity,youth_development,profitability,intl_prestige,since_year,worth_int,budget_int,team_url,team_path,is_valid,category,city
+BOS,Boston Celtics,CLUB,MEN,Eastern,USA,Eastern,Atlantic,Eastern,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Boston
+BKN,Brooklyn Nets,CLUB,MEN,Eastern,USA,Eastern,Atlantic,Eastern,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Brooklyn
+NYK,New York Knicks,CLUB,MEN,Eastern,USA,Eastern,Atlantic,Eastern,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,New York
+PHI,Philadelphia 76ers,CLUB,MEN,Eastern,USA,Eastern,Atlantic,Eastern,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Philadelphia
+TOR,Toronto Raptors,CLUB,MEN,Eastern,USA,Eastern,Atlantic,Eastern,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Toronto
+CHI,Chicago Bulls,CLUB,MEN,Eastern,USA,Eastern,Central,Eastern,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Chicago
+CLE,Cleveland Cavaliers,CLUB,MEN,Eastern,USA,Eastern,Central,Eastern,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Cleveland
+DET,Detroit Pistons,CLUB,MEN,Eastern,USA,Eastern,Central,Eastern,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Detroit
+IND,Indiana Pacers,CLUB,MEN,Eastern,USA,Eastern,Central,Eastern,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Indiana
+MIL,Milwaukee Bucks,CLUB,MEN,Eastern,USA,Eastern,Central,Eastern,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Milwaukee
+ATL,Atlanta Hawks,CLUB,MEN,Eastern,USA,Eastern,Southeast,Eastern,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Atlanta
+CHA,Charlotte Hornets,CLUB,MEN,Eastern,USA,Eastern,Southeast,Eastern,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Charlotte
+MIA,Miami Heat,CLUB,MEN,Eastern,USA,Eastern,Southeast,Eastern,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Miami
+ORL,Orlando Magic,CLUB,MEN,Eastern,USA,Eastern,Southeast,Eastern,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Orlando
+WAS,Washington Wizards,CLUB,MEN,Eastern,USA,Eastern,Southeast,Eastern,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Washington
+DEN,Denver Nuggets,CLUB,MEN,Western,USA,Western,Northwest,Western,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Denver
+MIN,Minnesota Timberwolves,CLUB,MEN,Western,USA,Western,Northwest,Western,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Minnesota
+OKC,Oklahoma City Thunder,CLUB,MEN,Western,USA,Western,Northwest,Western,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Oklahoma City
+POR,Portland Trail Blazers,CLUB,MEN,Western,USA,Western,Northwest,Western,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Portland
+UTA,Utah Jazz,CLUB,MEN,Western,USA,Western,Northwest,Western,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Utah
+GSW,Golden State Warriors,CLUB,MEN,Western,USA,Western,Pacific,Western,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Golden State
+LAC,Los Angeles Clippers,CLUB,MEN,Western,USA,Western,Pacific,Western,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Los Angeles
+LAL,Los Angeles Lakers,CLUB,MEN,Western,USA,Western,Pacific,Western,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Los Angeles
+PHX,Phoenix Suns,CLUB,MEN,Western,USA,Western,Pacific,Western,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Phoenix
+SAC,Sacramento Kings,CLUB,MEN,Western,USA,Western,Pacific,Western,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Sacramento
+DAL,Dallas Mavericks,CLUB,MEN,Western,USA,Western,Southwest,Western,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Dallas
+HOU,Houston Rockets,CLUB,MEN,Western,USA,Western,Southwest,Western,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Houston
+MEM,Memphis Grizzlies,CLUB,MEN,Western,USA,Western,Southwest,Western,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,Memphis
+NOP,New Orleans Pelicans,CLUB,MEN,Western,USA,Western,Southwest,Western,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,New Orleans
+SAS,San Antonio Spurs,CLUB,MEN,Western,USA,Western,Southwest,Western,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,San Antonio
+ATL,Atlanta Dream,CLUB,WOMEN,NBA,USA,,,NBA,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,
+CHI,Chicago Sky,CLUB,WOMEN,NBA,USA,,,NBA,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,
+CON,Connecticut Sun,CLUB,WOMEN,NBA,USA,,,NBA,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,
+DAL,Dallas Wings,CLUB,WOMEN,NBA,USA,,,NBA,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,
+IND,Indiana Fever,CLUB,WOMEN,NBA,USA,,,NBA,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,
+LVA,Las Vegas Aces,CLUB,WOMEN,NBA,USA,,,NBA,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,
+LAS,Los Angeles Sparks,CLUB,WOMEN,NBA,USA,,,NBA,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,
+MIN,Minnesota Lynx,CLUB,WOMEN,NBA,USA,,,NBA,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,
+NYL,New York Liberty,CLUB,WOMEN,NBA,USA,,,NBA,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,
+PHX,Phoenix Mercury,CLUB,WOMEN,NBA,USA,,,NBA,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,
+SEA,Seattle Storm,CLUB,WOMEN,NBA,USA,,,NBA,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,
+WAS,Washington Mystics,CLUB,WOMEN,NBA,USA,,,NBA,0,0,0,0,0,0,0,0,0,0,0,0,,,1,clubs,

@@ -1,25 +1,20 @@
-import csv
-import json
+﻿import csv
 import os
 from typing import Any, Dict, List
 
-APP_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REGISTRY_PATH = os.path.join(APP_DIR, "data", "datasets.json")
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(os.path.dirname(APP_DIR), "data")
 
-def load_registry() -> Dict[str, Any]:
-    if not os.path.exists(REGISTRY_PATH):
-        raise FileNotFoundError("Arquivo data/datasets.json não encontrado.")
-    with open(REGISTRY_PATH, "r", encoding="utf-8") as fp:
-        return json.load(fp)
-
-def list_datasets() -> List[Dict[str, Any]]:
-    return load_registry().get("datasets", [])
-
-def get_dataset(key: str) -> Dict[str, Any]:
-    for d in list_datasets():
-        if d.get("key") == key:
-            return d
-    raise KeyError(f"Dataset não encontrado: {key}")
+DATASETS = {
+    "fc25": {
+        "label": "FC 25",
+        "path": os.path.join(DATA_DIR, "teams_fc25.csv"),
+    },
+    "nba": {
+        "label": "NBA 2K25",
+        "path": os.path.join(DATA_DIR, "teams_nba.csv"),
+    },
+}
 
 def _to_int(value: Any) -> int:
     try:
@@ -27,30 +22,57 @@ def _to_int(value: Any) -> int:
     except Exception:
         return 0
 
-def load_rows(dataset_key: str) -> List[Dict[str, Any]]:
-    ds = get_dataset(dataset_key)
-    csv_path = os.path.join(APP_DIR, ds["csv_path"])
-    if not os.path.exists(csv_path):
-        raise FileNotFoundError(f"CSV do dataset não encontrado: {csv_path}")
+
+def list_datasets() -> List[Dict[str, Any]]:
+    out = []
+    for key, meta in DATASETS.items():
+        out.append({"key": key, "label": meta.get("label", key)})
+    return out
+
+
+def load_rows(dataset: str) -> List[Dict[str, Any]]:
+    if dataset not in DATASETS:
+        raise ValueError("Dataset invalido.")
+    path = DATASETS[dataset]["path"]
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Arquivo nao encontrado: {path}")
 
     rows: List[Dict[str, Any]] = []
-    with open(csv_path, "r", encoding="utf-8") as fp:
-        reader = csv.DictReader(fp)
+    with open(path, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
         for r in reader:
-            for k in ["overall", "attack", "midfield", "defence", "offense", "defense"]:
+            for k in [
+                "overall",
+                "attack",
+                "midfield",
+                "defence",
+                "avg_age",
+                "stadium_capacity",
+                "youth_development",
+                "profitability",
+                "intl_prestige",
+                "since_year",
+                "worth_int",
+                "budget_int",
+            ]:
                 if k in r:
                     r[k] = _to_int(r.get(k))
             r["is_valid"] = str(r.get("is_valid", "")).lower() in ("true", "1", "yes")
             rows.append(r)
     return rows
 
-def compute_stats(dataset_key: str) -> Dict[str, Any]:
-    rows = load_rows(dataset_key)
+
+def compute_stats(dataset: str) -> Dict[str, Any]:
+    rows = load_rows(dataset)
     valid = [r for r in rows if r.get("is_valid", True)]
     return {
-        "dataset": dataset_key,
+        "dataset": dataset,
         "total_rows": len(rows),
         "valid_rows": len(valid),
-        "max_overall": max((int(r.get("overall", 0) or 0) for r in valid), default=0),
-        "min_overall": min((int(r.get("overall", 0) or 0) for r in valid), default=0),
+        "club": sum(1 for t in valid if (t.get("team_type") or "").upper() == "CLUB"),
+        "national": sum(1 for t in valid if (t.get("team_type") or "").upper() == "NATIONAL"),
+        "women": sum(1 for t in valid if (t.get("gender") or "").upper() == "WOMEN"),
+        "men": sum(1 for t in valid if (t.get("gender") or "").upper() == "MEN"),
+        "max_overall": max((t.get("overall", 0) for t in valid), default=0),
+        "min_overall": min((t.get("overall", 0) for t in valid), default=0),
     }

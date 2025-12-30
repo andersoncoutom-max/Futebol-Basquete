@@ -1,75 +1,31 @@
-let participants = [];
-let clientId = null;
-let isPro = false;
-let pendingFeature = null;
-let pendingAction = null;
-let lastDrawPayload = null;
-let datasets = [];
-let currentDataset = "fc25";
+﻿const participants = [];
 
-function byId(id){ return document.getElementById(id); }
+const datasetState = {
+  current: "fc25"
+};
 
-function showError(msg){
-  const box = byId("errorBox");
-  box.textContent = msg;
-  box.classList.remove("d-none");
-}
-function clearError(){
-  const box = byId("errorBox");
-  box.textContent = "";
-  box.classList.add("d-none");
-}
+const bracketState = {
+  rounds: [],
+  pendingByes: []
+};
 
-function loadLocal(){
-
-  try{
-    const cid = localStorage.getItem("sorteiospro_client_id");
-    if (cid) {
-      clientId = cid;
-    } else {
-      clientId = (crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Math.random()).slice(2);
-      localStorage.setItem("sorteiospro_client_id", clientId);
-    }
-  }catch{
-    clientId = String(Math.random()).slice(2);
-  }
-
-  try{
-    const raw = localStorage.getItem("sorteiospro_state");
-    if(!raw) return;
-    const st = JSON.parse(raw);
-    participants = Array.isArray(st.participants) ? st.participants : [];
-    currentDataset = st.dataset || "fc25";
-    const theme = st.theme || "light";
-    if(theme === "dark") document.body.classList.add("dark");
-  }catch{}
-}
-function saveLocal(){
-  try{
-    const st = {participants, dataset: currentDataset, isPro, theme: document.body.classList.contains("dark") ? "dark" : "light"};
-    localStorage.setItem("sorteiospro_state", JSON.stringify(st));
-  }catch{}
-}
-
-function renderParticipants(){
-  byId("participantsCount").textContent = String(participants.length);
-  const ul = byId("participantsList");
+function renderParticipants() {
+  const ul = document.getElementById("participantsList");
   ul.innerHTML = "";
+
   participants.forEach((name, idx) => {
     const li = document.createElement("li");
-    li.className = "list-group-item d-flex justify-content-between align-items-center px-0";
+    li.className = "list-group-item d-flex justify-content-between align-items-center";
 
     const span = document.createElement("span");
     span.textContent = name;
 
     const btn = document.createElement("button");
-    btn.className = "btn btn-sm btn-outline-danger";
+    btn.className = "btn btn-sm btn-outline-light";
     btn.textContent = "Remover";
     btn.onclick = () => {
       participants.splice(idx, 1);
-      saveLocal();
       renderParticipants();
-  setProToggleUI();
     };
 
     li.appendChild(span);
@@ -78,485 +34,448 @@ function renderParticipants(){
   });
 }
 
-function getSelectedOptions(selectId){
-  const el = byId(selectId);
-  if(!el) return [];
-  return Array.from(el.selectedOptions).map(o => o.value).filter(Boolean);
+function showError(msg) {
+  const box = document.getElementById("errorBox");
+  box.textContent = msg;
+  box.classList.remove("d-none");
 }
 
-function getFilters(){
-  const overall_min = parseInt(byId("overallMin").value || "0", 10);
-  const mode = byId("modeSelect").value;
-  const top_n = parseInt(byId("topN").value || "20", 10);
-  const include_invalid = byId("includeInvalid").checked;
-
-  const filters = { overall_min, mode, top_n, include_invalid };
-
-  const team_types = getSelectedOptions("teamTypeSelect");
-  const genders = getSelectedOptions("genderSelect");
-  const competitions = getSelectedOptions("competitionSelect");
-  const countries = getSelectedOptions("countrySelect");
-  if(team_types.length) filters.team_types = team_types;
-  if(genders.length) filters.genders = genders;
-  if(competitions.length) filters.competitions = competitions;
-  if(countries.length) filters.countries = countries;
-
-  const conferences = getSelectedOptions("conferenceSelect");
-  const divisions = getSelectedOptions("divisionSelect");
-  if(conferences.length) filters.conferences = conferences;
-  if(divisions.length) filters.divisions = divisions;
-
-  return filters;
+function clearError() {
+  const box = document.getElementById("errorBox");
+  box.textContent = "";
+  box.classList.add("d-none");
 }
 
-async function fetchJSON(url, payload){
-  const opt = payload ? {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify(payload)
-  } : { method: "GET" };
+function formatCount(label, value) {
+  return `${label}: ${value ?? "--"}`;
+}
 
-  const r = await fetch(url, opt);
-  const j = await r.json().catch(() => ({}));
-  if(!r.ok){
-    throw new Error(j.error || `Erro HTTP ${r.status}`);
+function categoryLabel(teamType, gender) {
+  const t = (teamType || "").toUpperCase();
+  const g = (gender || "").toUpperCase();
+
+  if (datasetState.current === "nba") {
+    return g === "WOMEN" ? "WNBA" : "NBA";
   }
-  return j;
+
+  if (t === "NATIONAL" && g === "WOMEN") return "Selecoes femininas";
+  if (t === "NATIONAL" && g === "MEN") return "Selecoes masculinas";
+  if (t === "CLUB" && g === "WOMEN") return "Clubes femininos";
+  if (t === "CLUB" && g === "MEN") return "Clubes masculinos";
+  if (t === "NATIONAL") return "Selecoes";
+  return "Clubes";
 }
 
-function escapeHtml(str){
-  return String(str ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+function roundName(size) {
+  if (size <= 1) return "Campeao";
+  if (size === 2) return "Final";
+  if (size === 4) return "Semifinal";
+  if (size === 8) return "Quartas de final";
+  if (size === 16) return "Oitavas de final";
+  if (size === 32) return "Rodada de 32";
+  if (size === 64) return "Rodada de 64";
+  return `Fase de ${size}`;
 }
 
-function renderPool(sample, count){
-  byId("poolCount").textContent = String(count);
-  byId("poolCount2").textContent = String(count);
-
-  const tbody = byId("poolTbody");
-  tbody.innerHTML = "";
-  sample.forEach(t => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${escapeHtml(t.team_name)}</td>
-      <td>${t.overall ?? ""}</td>
-      <td>${t.attack ?? ""}</td>
-      <td>${t.midfield ?? ""}</td>
-      <td>${t.defence ?? ""}</td>
-      <td class="col-min">${escapeHtml(t.team_type || "")}</td>
-      <td class="col-min">${escapeHtml(t.gender || "")}</td>
-      <td class="col-min">${escapeHtml(t.country || "")}</td>
-      <td class="col-min">${escapeHtml(t.conference || "")}</td>
-      <td class="col-min">${escapeHtml(t.division || "")}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-function renderResult(draw, poolCount){
-  const tbody = byId("resultTbody");
-  tbody.innerHTML = "";
-  draw.forEach(r => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${escapeHtml(r.participant)}</td>
-      <td>${escapeHtml(r.team_name)}</td>
-      <td>${r.overall ?? ""}</td>
-      <td>${r.attack ?? r.offense ?? ""}</td>
-      <td>${r.midfield ?? ""}</td>
-      <td>${r.defence ?? r.defense ?? ""}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-
-  byId("resultMeta").textContent = `Participantes: ${draw.length}. Pool: ${poolCount}. Dataset: ${currentDataset}.`;
-
-  byId("copyBtn").disabled = draw.length === 0;
-  byId("exportBtn").disabled = draw.length === 0;
-  byId("bracketBtn").disabled = draw.length < 2;
-  byId("rrBtn").disabled = draw.length < 2;
-
-  byId("bracketBox").classList.add("d-none");
-  byId("bracketRounds").innerHTML = "";
-  byId("bracketMeta").textContent = "";
-}
-
-async function loadDatasets(){
-  const j = await fetchJSON("/api/datasets");
-  datasets = j.datasets || [];
-  const sel = byId("datasetSelect");
-  sel.innerHTML = "";
-  datasets.forEach(d => {
-    const opt = document.createElement("option");
-    opt.value = d.key;
-    opt.textContent = d.name;
-    sel.appendChild(opt);
-  });
-  sel.value = currentDataset;
-}
-
-function setFiltersVisible(){
-  const isSoccer = currentDataset === "fc25";
-  byId("filtersSoccer").classList.toggle("d-none", !isSoccer);
-  byId("filtersBasket").classList.toggle("d-none", isSoccer);
-}
-
-async function loadFacets(){
-  const j = await fetchJSON("/api/facets", { dataset: currentDataset });
-  fillMulti("teamTypeSelect", j.team_types || []);
-  fillMulti("genderSelect", j.genders || []);
-  fillMulti("competitionSelect", (j.competitions || []).slice(0, 250));
-  fillMulti("countrySelect", (j.countries || []).slice(0, 250));
-  fillMulti("conferenceSelect", j.conferences || []);
-  fillMulti("divisionSelect", j.divisions || []);
-}
-
-function fillMulti(id, items){
-  const el = byId(id);
-  if(!el) return;
-  el.innerHTML = "";
-  items.forEach(v => {
-    const opt = document.createElement("option");
-    opt.value = v;
-    opt.textContent = v;
-    el.appendChild(opt);
-  });
-}
-
-async function loadStats(){
-  const j = await fetchJSON(`/api/stats?dataset=${encodeURIComponent(currentDataset)}`);
-  byId("statsLine").textContent = `Válidos: ${j.valid_rows} de ${j.total_rows}. OVR ${j.min_overall} a ${j.max_overall}.`;
-}
-
-async function previewPool(){
-  clearError();
-  const filters = getFilters();
-  try{
-    const j = await fetchJSON("/api/pool_preview", { dataset: currentDataset, filters, limit: 30 });
-    renderPool(j.sample || [], j.count || 0);
-  }catch(e){
-    showError(e.message || "Erro ao pré-visualizar.");
+function shuffleArray(arr) {
+  const out = arr.slice();
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
   }
+  return out;
 }
 
-async function doDraw(){
-  clearError();
-  const filters = getFilters();
-  if (participants.length === 0){
-    showError("Adicione ao menos 1 participante.");
+function createMatches(entries) {
+  const matches = [];
+  for (let i = 0; i < entries.length; i += 2) {
+    const a = entries[i] || null;
+    const b = entries[i + 1] || null;
+    const winner = b ? null : (a ? "a" : null);
+    matches.push({ a, b, winner });
+  }
+  return matches;
+}
+
+function resetBracket() {
+  bracketState.rounds = [];
+  bracketState.pendingByes = [];
+  renderBracket();
+}
+
+function buildBracket(draw) {
+  resetBracket();
+
+  const entries = shuffleArray(draw).map((row) => ({
+    participant: row.participant,
+    team_name: row.team_name,
+    team_type: row.team_type,
+    gender: row.gender,
+    overall: row.overall,
+    attack: row.attack,
+    midfield: row.midfield,
+    defence: row.defence,
+    competition: row.competition,
+    country: row.country
+  }));
+
+  const total = entries.length;
+  let base = 1;
+  while (base * 2 <= total) base *= 2;
+  const extras = total - base;
+
+  if (extras > 0) {
+    const repCount = extras * 2;
+    const repParticipants = entries.slice(0, repCount);
+    const byes = entries.slice(repCount);
+    bracketState.pendingByes = byes;
+    bracketState.rounds.push({
+      name: "Repescagem",
+      matches: createMatches(repParticipants)
+    });
+  } else {
+    bracketState.rounds.push({
+      name: roundName(entries.length),
+      matches: createMatches(entries)
+    });
+  }
+
+  renderBracket();
+}
+
+function selectWinner(roundIndex, matchIndex, side) {
+  const round = bracketState.rounds[roundIndex];
+  if (!round) return;
+  const match = round.matches[matchIndex];
+  if (!match || !match[side]) return;
+  match.winner = side;
+  renderBracket();
+  maybeAdvance(roundIndex);
+}
+
+function roundWinners(round) {
+  const winners = [];
+  for (const match of round.matches) {
+    if (!match.winner) return null;
+    winners.push(match[match.winner]);
+  }
+  return winners;
+}
+
+function maybeAdvance(roundIndex) {
+  const round = bracketState.rounds[roundIndex];
+  if (!round) return;
+  if (bracketState.rounds[roundIndex + 1]) return;
+
+  const winners = roundWinners(round);
+  if (!winners) return;
+
+  let participants = winners;
+  if (roundIndex === 0 && bracketState.pendingByes.length > 0) {
+    participants = winners.concat(bracketState.pendingByes);
+    bracketState.pendingByes = [];
+  }
+
+  if (participants.length <= 1) {
+    renderBracket();
     return;
   }
-  try{
-    const j = await fetchJSON("/api/draw", { dataset: currentDataset, participants, filters });
-    lastDrawPayload = j;
-    renderResult(j.draw || [], j.pool_count || 0);
-    saveLocal();
-  }catch(e){
-    showError(e.message || "Erro ao sortear.");
+
+  bracketState.rounds.push({
+    name: roundName(participants.length),
+    matches: createMatches(participants)
+  });
+  renderBracket();
+}
+
+function updateBracketStatus() {
+  const status = document.getElementById("bracketStatus");
+  const nextBtn = document.getElementById("nextRoundBtn");
+  if (!status || !nextBtn) return;
+
+  if (bracketState.rounds.length === 0) {
+    status.textContent = "Gere o sorteio para montar o chaveamento.";
+    nextBtn.classList.add("d-none");
+    return;
+  }
+
+  const lastIndex = bracketState.rounds.length - 1;
+  const round = bracketState.rounds[lastIndex];
+  const decided = round.matches.filter((m) => m.winner).length;
+  const total = round.matches.length;
+  status.textContent = `${round.name}: ${decided}/${total} definidos`;
+
+  if (decided === total && !bracketState.rounds[lastIndex + 1]) {
+    nextBtn.classList.remove("d-none");
+  } else {
+    nextBtn.classList.add("d-none");
   }
 }
 
-async function copyResult(){
-  if (!lastDrawPayload) return;
-  const lines = (lastDrawPayload.draw || []).map(r => `${r.participant};${r.team_name};${r.overall}`);
-  const text = ["PARTICIPANTE;TIME;OVR", ...lines].join("\n");
-  try{
-    await navigator.clipboard.writeText(text);
-  }catch{
-    showError("Não foi possível copiar. Verifique permissões do navegador.");
+function renderEntry(entry, isWinner) {
+  const btn = document.createElement("button");
+  btn.className = `match-btn ${isWinner ? "winner" : ""}`;
+
+  if (!entry) {
+    btn.classList.add("muted");
+    btn.textContent = "Aguardando";
+    btn.disabled = true;
+    return btn;
   }
+
+  const title = document.createElement("div");
+  title.className = "match-title";
+  title.textContent = entry.participant;
+
+  const team = document.createElement("div");
+  team.className = "match-team";
+  team.textContent = entry.team_name;
+
+  const meta = document.createElement("div");
+  meta.className = "match-meta";
+  meta.textContent = `${categoryLabel(entry.team_type, entry.gender)} | OVR ${entry.overall}`;
+
+  btn.appendChild(title);
+  btn.appendChild(team);
+  btn.appendChild(meta);
+
+  return btn;
 }
 
-async function exportExcelCore(){
-  if (!lastDrawPayload) return;
-  clearError();
-  try{
-    const r = await fetch("/api/export_xlsx", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify(lastDrawPayload)
-    });
-    if (!r.ok){
-      const j = await r.json().catch(() => ({}));
-      showError(j.error || "Erro ao exportar.");
-      return;
-    }
-    const blob = await r.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "sorteio.xlsx";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(url);
-  }catch{
-    showError("Falha ao exportar.");
-  }
-}
-
-function renderBracket(br){
-  byId("rrBox").classList.add("d-none");
-  byId("rrTbody").innerHTML = "";
-  byId("rrMeta").textContent = "";
-
-  const box = byId("bracketBox");
-  box.classList.remove("d-none");
-
-  byId("bracketMeta").textContent = `Tamanho do bracket: ${br.size}.`;
-  const container = byId("bracketRounds");
+function renderBracket() {
+  const container = document.getElementById("bracketContainer");
+  if (!container) return;
   container.innerHTML = "";
 
-  (br.rounds || []).forEach(rnd => {
-    const card = document.createElement("div");
-    card.className = "card card-soft mb-2";
-    const body = document.createElement("div");
-    body.className = "card-body";
+  if (bracketState.rounds.length === 0) {
+    container.innerHTML = "<div class=\"muted\">Gere o sorteio para montar o chaveamento.</div>";
+    updateBracketStatus();
+    return;
+  }
 
-    const title = document.createElement("div");
-    title.className = "fw-semibold mb-2";
-    title.textContent = `${rnd.name}`;
+  const grid = document.createElement("div");
+  grid.className = "bracket-grid";
 
-    body.appendChild(title);
+  bracketState.rounds.forEach((round, rIdx) => {
+    const col = document.createElement("div");
+    col.className = "bracket-round";
 
-    const list = document.createElement("div");
-    list.className = "d-grid gap-2";
+    const title = document.createElement("h6");
+    title.textContent = round.name;
+    col.appendChild(title);
 
-    (rnd.matches || []).forEach(m => {
-      const a = m.a ? `${m.a.participant} (${m.a.team_name})` : "BYE";
-      const b = m.b ? `${m.b.participant} (${m.b.team_name})` : "BYE";
-      const row = document.createElement("div");
-      row.className = "d-flex justify-content-between align-items-center p-2 rounded-3 border";
-      row.innerHTML = `<span class="small">${escapeHtml(a)}</span><span class="mono small text-muted">vs</span><span class="small">${escapeHtml(b)}</span>`;
-      list.appendChild(row);
+    round.matches.forEach((match, mIdx) => {
+      const card = document.createElement("div");
+      card.className = "bracket-match";
+
+      const header = document.createElement("div");
+      header.className = "match-header";
+      header.textContent = `Jogo ${mIdx + 1}`;
+
+      const aBtn = renderEntry(match.a, match.winner === "a");
+      aBtn.onclick = () => selectWinner(rIdx, mIdx, "a");
+
+      const bBtn = renderEntry(match.b, match.winner === "b");
+      bBtn.onclick = () => selectWinner(rIdx, mIdx, "b");
+
+      const vs = document.createElement("div");
+      vs.className = "match-vs";
+      vs.textContent = "VS";
+
+      card.appendChild(header);
+      card.appendChild(aBtn);
+      card.appendChild(vs);
+      card.appendChild(bBtn);
+      col.appendChild(card);
     });
 
-    body.appendChild(list);
-    card.appendChild(body);
-    container.appendChild(card);
+    grid.appendChild(col);
   });
+
+  container.appendChild(grid);
+  updateBracketStatus();
 }
 
-async function makeBracketCore(){
-  if (!lastDrawPayload) return;
-  clearError();
-  try{
-    const br = await fetchJSON("/api/bracket", { draw: lastDrawPayload.draw || [] });
-    renderBracket(br);
-  }catch(e){
-    showError(e.message || "Erro ao gerar chaveamento.");
+function updateCategoryOptions() {
+  const select = document.getElementById("categorySelect");
+  if (!select) return;
+
+  const previous = select.value;
+  const options = [];
+
+  if (datasetState.current === "nba") {
+    options.push({ value: "all", label: "Todos os times" });
+    options.push({ value: "clubs_men", label: "NBA (masculino)" });
+    options.push({ value: "clubs_women", label: "WNBA (feminino)" });
+  } else {
+    options.push({ value: "all", label: "Todas" });
+    options.push({ value: "clubs", label: "Clubes (todos)" });
+    options.push({ value: "clubs_men", label: "Clubes masculinos" });
+    options.push({ value: "clubs_women", label: "Clubes femininos" });
+    options.push({ value: "national", label: "Selecoes (todas)" });
+    options.push({ value: "national_men", label: "Selecoes masculinas" });
+    options.push({ value: "national_women", label: "Selecoes femininas" });
+  }
+
+  select.innerHTML = "";
+  options.forEach((opt) => {
+    const option = document.createElement("option");
+    option.value = opt.value;
+    option.textContent = opt.label;
+    select.appendChild(option);
+  });
+
+  if (previous && options.some((opt) => opt.value === previous)) {
+    select.value = previous;
   }
 }
 
-function applyThemeToggle(){
-  document.body.classList.toggle("dark");
-  saveLocal();
+function updateDatasetTabs() {
+  const fcBtn = document.getElementById("datasetFc25Btn");
+  const nbaBtn = document.getElementById("datasetNbaBtn");
+  if (!fcBtn || !nbaBtn) return;
+
+  fcBtn.classList.toggle("active", datasetState.current === "fc25");
+  nbaBtn.classList.toggle("active", datasetState.current === "nba");
+}
+
+function updateStatsLabels(stats) {
+  const infoTotal = document.getElementById("infoTotal");
+  const infoClubs = document.getElementById("infoClubs");
+  const infoWomen = document.getElementById("infoWomen");
+  const infoNational = document.getElementById("infoNational");
+
+  if (datasetState.current === "nba") {
+    infoTotal.textContent = formatCount("Times", stats.total_teams);
+    infoClubs.textContent = formatCount("NBA", stats.counts?.clubs);
+    infoWomen.textContent = formatCount("WNBA", stats.counts?.women);
+    infoNational.textContent = formatCount("Masc", stats.counts?.men ?? "--");
+  } else {
+    infoTotal.textContent = formatCount("Total", stats.total_teams);
+    infoClubs.textContent = formatCount("Clubes", stats.counts?.clubs);
+    infoWomen.textContent = formatCount("Feminino", stats.counts?.women);
+    infoNational.textContent = formatCount("Selecoes", stats.counts?.national);
+  }
+}
+
+async function loadTeamsInfo() {
+  try {
+    const r = await fetch(`/api/teams_info?dataset=${datasetState.current}`);
+    const j = await r.json();
+    const el = document.getElementById("teamsInfo");
+    el.textContent = `Base: ${j.total_teams} | OVR min: ${j.min_overall} | OVR max: ${j.max_overall}`;
+    updateStatsLabels(j);
+  } catch {
+    // silencioso
+  }
+}
+
+function setDataset(dataset) {
+  datasetState.current = dataset;
+  const body = document.body;
+  if (body) {
+    body.classList.remove("theme-fc", "theme-nba");
+    body.classList.add(dataset === "nba" ? "theme-nba" : "theme-fc");
+  }
+  updateDatasetTabs();
+  updateCategoryOptions();
+  loadTeamsInfo();
+  resetBracket();
+
+  const tbody = document.getElementById("resultTbody");
+  if (tbody) {
+    tbody.innerHTML = "";
+  }
 }
 
 
-function setProToggleUI(){
-  const el = byId("proToggle");
-  if (!el) return;
-  el.checked = !!isPro;
-}
-
-function wireEvents(){
-  byId("addParticipantBtn").addEventListener("click", () => {
-    const input = byId("participantInput");
-    const name = (input.value || "").trim();
-    if (!name) return;
-    participants.push(name);
-    input.value = "";
-    saveLocal();
-    renderParticipants();
-  });
-
-  byId("participantInput").addEventListener("keydown", (e) => {
-    if (e.key === "Enter"){
-      e.preventDefault();
-      byId("addParticipantBtn").click();
-    }
-  });
-
-  byId("importBtn").addEventListener("click", () => {
-    const txt = byId("bulkInput").value || "";
-    const lines = txt.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-    lines.forEach(n => participants.push(n));
-    byId("bulkInput").value = "";
-    saveLocal();
-    renderParticipants();
-  });
-
-  byId("clearParticipantsBtn").addEventListener("click", () => {
-    participants = [];
-    saveLocal();
-    renderParticipants();
-  });
-
-  byId("overallMin").addEventListener("input", () => {
-    byId("overallMinLabel").textContent = byId("overallMin").value;
-  });
-
-  byId("previewBtn").addEventListener("click", previewPool);
-  byId("drawBtn").addEventListener("click", doDraw);
-  byId("copyBtn").addEventListener("click", copyResult);
-  byId("exportBtn").addEventListener("click", exportExcel);
-  byId("bracketBtn").addEventListener("click", makeBracket);
-
-  byId("datasetSelect").addEventListener("change", async (e) => {
-    currentDataset = e.target.value;
-    saveLocal();
-    setFiltersVisible();
-    await loadStats();
-    await loadFacets();
-    await previewPool();
-  });
-
-  byId("btnTheme").addEventListener("click", applyThemeToggle);
-
-  byId("proToggle").addEventListener("change", (e) => {
-    isPro = !!e.target.checked;
-    saveLocal();
-  });
-}
-
-async function init(){
-  loadLocal();
-  wireEvents();
+document.getElementById("addParticipantBtn").addEventListener("click", () => {
+  const input = document.getElementById("participantInput");
+  const name = (input.value || "").trim();
+  if (!name) return;
+  participants.push(name);
+  input.value = "";
   renderParticipants();
-  await loadDatasets();
-  setFiltersVisible();
-  await loadStats();
-  await loadFacets();
+});
 
-  byId("overallMinLabel").textContent = byId("overallMin").value;
-  await previewPool();
-}
+document.getElementById("participantInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") document.getElementById("addParticipantBtn").click();
+});
 
-init();
+document.getElementById("clearParticipantsBtn").addEventListener("click", () => {
+  participants.length = 0;
+  renderParticipants();
+});
 
-function renderRoundRobin(rr){
-  const box = byId("rrBox");
-  box.classList.remove("d-none");
-
-  byId("rrMeta").textContent = `Participantes: ${rr.players}. Total de jogos: ${rr.total_matches}.`;
-  const tbody = byId("rrTbody");
-  tbody.innerHTML = "";
-
-  (rr.matches || []).forEach((m, idx) => {
-    const a = m.a || {};
-    const b = m.b || {};
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td class="mono">${idx+1}</td>
-      <td>${escapeHtml(a.participant || "")}</td>
-      <td>${escapeHtml(a.team_name || "")}</td>
-      <td class="mono text-muted">vs</td>
-      <td>${escapeHtml(b.participant || "")}</td>
-      <td>${escapeHtml(b.team_name || "")}</td>
-    `;
-    tbody.appendChild(tr);
+const nextRoundBtn = document.getElementById("nextRoundBtn");
+if (nextRoundBtn) {
+  nextRoundBtn.addEventListener("click", () => {
+    const lastIndex = bracketState.rounds.length - 1;
+    if (lastIndex >= 0) {
+      maybeAdvance(lastIndex);
+    }
   });
 }
 
-async function makeRoundRobinCore(){
-  if (!lastDrawPayload) return;
+const datasetFc25Btn = document.getElementById("datasetFc25Btn");
+if (datasetFc25Btn) {
+  datasetFc25Btn.addEventListener("click", () => setDataset("fc25"));
+}
+
+const datasetNbaBtn = document.getElementById("datasetNbaBtn");
+if (datasetNbaBtn) {
+  datasetNbaBtn.addEventListener("click", () => setDataset("nba"));
+}
+
+document.getElementById("drawBtn").addEventListener("click", async () => {
   clearError();
-  try{
-    const rr = await fetchJSON("/api/round_robin", { draw: lastDrawPayload.draw || [] });
-    // esconde bracket, mostra rr
-    byId("bracketBox").classList.add("d-none");
-    byId("bracketRounds").innerHTML = "";
-    byId("bracketMeta").textContent = "";
-    renderRoundRobin(rr);
-  }catch(e){
-    showError(e.message || "Erro ao gerar todos contra todos.");
-  }
-}
+  const mode = document.getElementById("modeSelect").value;
+  const topN = parseInt(document.getElementById("topNInput").value || "10", 10);
+  const category = document.getElementById("categorySelect").value;
 
+  try {
+    const r = await fetch("/api/draw", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        dataset: datasetState.current,
+        participants,
+        mode,
+        top_n: topN,
+        category
+      })
+    });
 
-async function hasFeature(feature){
-  if (isPro) return true;
-  if (!clientId) return false;
-  try{
-    const j = await fetchJSON("/api/entitlement/check", { client_id: clientId, feature });
-    return !!j.allowed;
-  }catch{
-    return false;
-  }
-}
-
-function openRewarded(feature, actionFn){
-  pendingFeature = feature;
-  pendingAction = actionFn;
-
-  const modalEl = byId("rewardedModal");
-  const confirmBtn = byId("rewardedConfirmBtn");
-  const countdownEl = byId("rewardedCountdown");
-  const progressEl = byId("rewardedProgress");
-
-  confirmBtn.disabled = true;
-
-  let seconds = 10;
-  countdownEl.textContent = String(seconds);
-  progressEl.style.width = "0%";
-
-  const tick = () => {
-    seconds -= 1;
-    const done = Math.max(0, seconds);
-    countdownEl.textContent = String(done);
-    const pct = Math.min(100, Math.round(((10 - done) / 10) * 100));
-    progressEl.style.width = pct + "%";
-    if (done <= 0){
-      clearInterval(timer);
-      confirmBtn.disabled = false;
+    const j = await r.json();
+    if (!r.ok) {
+      showError(j.error || "Erro ao sortear.");
+      return;
     }
-  };
-  const timer = setInterval(tick, 1000);
 
-  const modal = new bootstrap.Modal(modalEl);
-  modal.show();
+    const tbody = document.getElementById("resultTbody");
+    tbody.innerHTML = "";
+    j.draw.forEach(row => {
+      const tr = document.createElement("tr");
+      const label = categoryLabel(row.team_type, row.gender);
+      tr.innerHTML = `
+        <td>${row.participant}</td>
+        <td>${row.team_name}</td>
+        <td>${label}</td>
+        <td>${row.overall}</td>
+        <td>${row.attack}</td>
+        <td>${row.midfield}</td>
+        <td>${row.defence}</td>
+      `;
+      tbody.appendChild(tr);
+    });
 
-  confirmBtn.onclick = async () => {
-    clearError();
-    confirmBtn.disabled = true;
-    try{
-      await fetchJSON("/api/entitlement/grant", { client_id: clientId, feature: pendingFeature, seconds: 900 });
-      modal.hide();
-      if (typeof pendingAction === "function"){
-        pendingAction();
-      }
-    }catch(e){
-      showError(e.message || "Falha ao desbloquear.");
-      confirmBtn.disabled = false;
-    }
-  };
-}
+    buildBracket(j.draw);
 
-async function ensureFeature(feature, actionFn){
-  const ok = await hasFeature(feature);
-  if (ok){
-    actionFn();
-    return true;
+  } catch (e) {
+    showError("Falha de comunicacao com o servidor.");
   }
-  openRewarded(feature, actionFn);
-  return false;
-}
+});
 
-
-async function exportExcel(){
-  return ensureFeature("export_xlsx", exportExcelCore);
-}
-
-async function makeBracket(){
-  return ensureFeature("bracket", makeBracketCore);
-}
-
-async function makeRoundRobin(){
-  // todos contra todos também pode ser premium se você quiser, mas deixei como gated no mesmo padrão
-  return ensureFeature("round_robin", makeRoundRobinCore);
-}
+setDataset("fc25");
+renderParticipants();
+renderBracket();
