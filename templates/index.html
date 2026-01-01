@@ -22,9 +22,8 @@
       --stroke: rgba(13, 21, 38, 0.12);
       --accent: #22c55e;
       --accent-2: #0ea5e9;
-      --accent-3: #f97316;
       --shadow: 0 24px 70px rgba(10, 20, 45, 0.18);
-      --radius: 24px;
+      --radius: 22px;
     }
 
     * { box-sizing: border-box; }
@@ -52,7 +51,7 @@
     .shell {
       max-width: 1180px;
       margin: 0 auto;
-      padding: 32px 20px 72px;
+      padding: 30px 20px 70px;
     }
 
     .glass {
@@ -68,35 +67,35 @@
       align-items: center;
       justify-content: space-between;
       gap: 16px;
-      padding: 16px 20px;
+      padding: 14px 18px;
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
     }
 
     .brand-logo {
-      width: 46px;
-      height: 46px;
-      border-radius: 16px;
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
       background: linear-gradient(135deg, var(--accent), var(--accent-2));
       display: grid;
       place-items: center;
       color: #0d1526;
       font-weight: 700;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       letter-spacing: 0.04em;
     }
 
     .brand-title {
       font-family: "Fraunces", serif;
-      font-size: 1.45rem;
+      font-size: 1.35rem;
       letter-spacing: 0.01em;
     }
 
-    .brand-sub { color: var(--muted); font-size: 0.92rem; }
+    .brand-sub { color: var(--muted); font-size: 0.9rem; }
 
     .topbar-actions {
       display: flex;
@@ -119,48 +118,47 @@
     }
 
     .hero {
-      margin-top: 22px;
-      padding: 26px;
+      margin-top: 18px;
+      padding: 22px;
       display: grid;
-      gap: 20px;
+      gap: 16px;
     }
 
     .hero h1 {
       font-family: "Fraunces", serif;
-      font-size: clamp(2.2rem, 4vw, 3.1rem);
-      margin-bottom: 10px;
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      margin-bottom: 8px;
     }
 
-    .hero-grid {
-      display: grid;
-      gap: 20px;
-      grid-template-columns: 1.1fr 0.9fr;
+    .hero-row {
+      display: flex;
       align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
     }
 
     .muted { color: var(--muted); }
 
-    .stat-list {
-      display: grid;
+    .stats-inline {
+      display: flex;
       gap: 10px;
+      flex-wrap: wrap;
+      font-size: 0.85rem;
     }
 
     .stat-pill {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 14px;
+      padding: 6px 12px;
       border-radius: 999px;
       border: 1px solid var(--stroke);
       background: rgba(255, 255, 255, 0.7);
       font-weight: 600;
-      font-size: 0.88rem;
     }
 
     .dataset-tabs {
       display: inline-flex;
-      gap: 10px;
-      padding: 8px;
+      gap: 8px;
+      padding: 6px;
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.7);
       border: 1px solid var(--stroke);
@@ -169,7 +167,7 @@
     .dataset-tab {
       border: none;
       background: transparent;
-      padding: 8px 18px;
+      padding: 6px 16px;
       border-radius: 999px;
       font-weight: 600;
       color: var(--ink);
@@ -181,17 +179,17 @@
     }
 
     .layout {
-      margin-top: 26px;
+      margin-top: 20px;
       display: grid;
-      gap: 18px;
+      gap: 16px;
       grid-template-columns: 0.9fr 1.1fr;
     }
 
-    .stack { display: grid; gap: 16px; }
+    .stack { display: grid; gap: 14px; }
 
     .section-title {
       font-weight: 700;
-      font-size: 1rem;
+      font-size: 0.98rem;
     }
 
     .form-label { font-weight: 600; }
@@ -262,7 +260,7 @@
 
     .bracket-round-title {
       font-weight: 700;
-      font-size: 0.95rem;
+      font-size: 0.92rem;
     }
 
     .bracket-match {
@@ -283,7 +281,7 @@
       padding: 8px 10px;
       border-radius: 12px;
       text-align: left;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
@@ -302,22 +300,12 @@
       color: rgba(248, 250, 252, 0.7);
     }
 
-    .pricing {
-      margin-top: 24px;
-      padding: 24px;
-      display: grid;
-      gap: 16px;
-    }
-
-    .pricing-badge {
-      display: inline-flex;
-      gap: 8px;
+    .pro-strip {
+      display: flex;
       align-items: center;
-      padding: 6px 12px;
-      border-radius: 999px;
-      background: rgba(34, 197, 94, 0.18);
-      border: 1px solid rgba(34, 197, 94, 0.4);
-      font-weight: 700;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 18px;
     }
 
     .reveal {
@@ -334,7 +322,7 @@
     @media (max-width: 992px) {
       .layout { grid-template-columns: 1fr; }
       .topbar { flex-direction: column; align-items: flex-start; }
-      .hero-grid { grid-template-columns: 1fr; }
+      .hero-row { align-items: flex-start; }
     }
   </style>
 </head>
@@ -345,59 +333,35 @@
         <div class="brand-logo">SP</div>
         <div>
           <div class="brand-title">Sorteio Pro</div>
-          <div class="brand-sub">Visual premium para sorteios casuais</div>
+          <div class="brand-sub">Sorteios premium para partidas casuais</div>
         </div>
       </div>
       <div class="topbar-actions">
-        <a class="btn btn-ghost btn-sm" href="#como-funciona">Como funciona</a>
-        <a class="btn btn-ghost btn-sm" href="#precos">Assinar Pro</a>
+        <a class="btn btn-ghost btn-sm" href="/tournament">Torneio online</a>
         <a class="btn btn-ghost btn-sm" href="/logout">Sair</a>
-        <a class="btn btn-accent btn-sm" href="#config">Comecar</a>
+        <a class="btn btn-accent btn-sm" href="#config">Criar sorteio</a>
       </div>
     </header>
 
     <section class="hero glass reveal">
-      <div class="hero-grid">
-        <div>
-          <div class="text-uppercase small muted">Sorteio inteligente</div>
-          <h1>Sorteio de Times</h1>
-          <p class="muted mb-0">Crie partidas equilibradas, gere mata-mata e compartilhe o resultado em segundos.</p>
-          <div class="dataset-tabs mt-3">
-            <button class="dataset-tab active" id="datasetFc25Btn" data-dataset="fc25">Futebol</button>
-            <button class="dataset-tab" id="datasetNbaBtn" data-dataset="nba">Basquete</button>
-          </div>
+      <div>
+        <div class="text-uppercase small muted">Sorteio inteligente</div>
+        <h1>Sorteio de Times</h1>
+        <p class="muted mb-0">Crie partidas equilibradas, gere mata-mata e compartilhe o resultado em segundos.</p>
+      </div>
+      <div class="hero-row">
+        <div class="dataset-tabs">
+          <button class="dataset-tab active" id="datasetFc25Btn" data-dataset="fc25">Futebol</button>
+          <button class="dataset-tab" id="datasetNbaBtn" data-dataset="nba">Basquete</button>
         </div>
-        <div class="stat-list">
-          <div class="stat-pill" id="infoTotal">Total: --</div>
-          <div class="stat-pill" id="infoClubs">Clubes: --</div>
-          <div class="stat-pill" id="infoWomen">Feminino: --</div>
-          <div class="stat-pill" id="infoNational">Selecoes: --</div>
-          <div class="muted small">Modo live: clique no vencedor para avancar.</div>
+        <div class="stats-inline">
+          <span class="stat-pill" id="infoTotal">Total: --</span>
+          <span class="stat-pill" id="infoClubs">Clubes: --</span>
+          <span class="stat-pill" id="infoWomen">Feminino: --</span>
+          <span class="stat-pill" id="infoNational">Selecoes: --</span>
         </div>
       </div>
-    </section>
-
-    <section id="como-funciona" class="mt-4">
-      <div class="row g-3">
-        <div class="col-lg-4">
-          <div class="glass p-3 reveal">
-            <div class="section-title">1. Monte a lista</div>
-            <div class="muted">Adicione participantes rapido ou importe uma lista completa.</div>
-          </div>
-        </div>
-        <div class="col-lg-4">
-          <div class="glass p-3 reveal">
-            <div class="section-title">2. Configure o filtro</div>
-            <div class="muted">Escolha categoria e defina se quer top N por overall.</div>
-          </div>
-        </div>
-        <div class="col-lg-4">
-          <div class="glass p-3 reveal">
-            <div class="section-title">3. Gere e compartilhe</div>
-            <div class="muted">Copie, exporte ou compartilhe o link da sua chave.</div>
-          </div>
-        </div>
-      </div>
+      <div class="muted small">Modo live: clique no vencedor para avancar.</div>
     </section>
 
     <section id="config" class="layout">
@@ -421,16 +385,9 @@
         </div>
 
         <div class="glass p-3 reveal">
-          <div class="section-title">Resumo do plano Pro</div>
-          <div class="muted mb-2">Remova limites, exporte e salve historico.</div>
-          <div class="d-flex flex-wrap gap-2">
-            <span class="stat-pill">Exportar XLSX</span>
-            <span class="stat-pill">Compartilhar rapido</span>
-            <span class="stat-pill">Sem anuncios</span>
-          </div>
-          <div class="mt-3">
-            <a class="btn btn-accent js-pro-link" data-whatsapp="" href="#">Assinar pelo WhatsApp</a>
-          </div>
+          <div class="section-title">Plano Pro</div>
+          <div class="muted mb-2">Exportacao ilimitada, historico e novos modos primeiro.</div>
+          <a class="btn btn-ghost btn-sm js-pro-link" data-whatsapp="" href="#">Assinar</a>
         </div>
       </div>
 
@@ -461,12 +418,12 @@
           </div>
           <div class="action-row mt-3">
             <button id="drawBtn" class="btn btn-success">Criar sorteio</button>
-            <button id="bracketBtn" class="btn btn-ghost" disabled>Gerar chaveamento</button>
+            <button id="bracketBtn" class="btn btn-ghost" disabled>Chaveamento</button>
             <button id="rrBtn" class="btn btn-ghost" disabled>Todos contra todos</button>
             <button id="copyBtn" class="btn btn-ghost" disabled>Copiar</button>
-            <button id="csvBtn" class="btn btn-ghost" disabled>Exportar CSV</button>
-            <button id="pngBtn" class="btn btn-ghost" disabled>Exportar PNG</button>
-            <button id="exportBtn" class="btn btn-ghost" disabled>Exportar XLSX</button>
+            <button id="csvBtn" class="btn btn-ghost" disabled>CSV</button>
+            <button id="pngBtn" class="btn btn-ghost" disabled>PNG</button>
+            <button id="exportBtn" class="btn btn-ghost" disabled>XLSX</button>
             <button id="shareBtn" class="btn btn-ghost" disabled>Compartilhar</button>
           </div>
           <div id="errorBox" class="alert alert-danger mt-3 d-none"></div>
@@ -528,19 +485,12 @@
       </div>
     </section>
 
-    <section id="precos" class="pricing glass reveal">
-      <div class="pricing-badge">Plano Pro mensal</div>
-      <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
-        <div>
-          <h3 class="mb-2">Desbloqueie recursos premium</h3>
-          <p class="muted mb-2">Exportacao ilimitada, historico e novos modos primeiro.</p>
-        </div>
-        <div class="text-lg-end">
-          <div class="h2 mb-1">R$ 14,90<span class="muted fs-6">/mes</span></div>
-          <div class="muted mb-3">Cancele quando quiser</div>
-          <a class="btn btn-accent js-pro-link" data-whatsapp="" href="#">Assinar agora</a>
-        </div>
+    <section class="pro-strip glass reveal">
+      <div>
+        <div class="section-title">Sorteio Pro</div>
+        <div class="muted">Desbloqueie exportacoes e historico completo.</div>
       </div>
+      <a class="btn btn-accent js-pro-link" data-whatsapp="" href="#">Assinar</a>
     </section>
   </div>
 
