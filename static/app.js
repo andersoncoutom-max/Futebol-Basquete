@@ -57,8 +57,8 @@ function clearError() {
   box.classList.add("d-none");
 }
 
-function formatCount(label, value) {
-  return `${label}: ${value ?? "--"}`;
+function formatCount(value) {
+  return value ?? "--";
 }
 
 function categoryLabel(teamType, gender) {
@@ -426,17 +426,29 @@ function updateStatsLabels(stats) {
   const infoClubs = document.getElementById("infoClubs");
   const infoWomen = document.getElementById("infoWomen");
   const infoNational = document.getElementById("infoNational");
+  const labelTotal = document.getElementById("labelTotal");
+  const labelClubs = document.getElementById("labelClubs");
+  const labelWomen = document.getElementById("labelWomen");
+  const labelNational = document.getElementById("labelNational");
 
   if (datasetState.current === "nba") {
-    infoTotal.textContent = formatCount("Times", stats.total_teams);
-    infoClubs.textContent = formatCount("NBA", stats.counts?.clubs);
-    infoWomen.textContent = formatCount("WNBA", stats.counts?.women);
-    infoNational.textContent = formatCount("Masc", stats.counts?.men ?? "--");
+    infoTotal.textContent = formatCount(stats.total_teams);
+    infoClubs.textContent = formatCount(stats.counts?.clubs);
+    infoWomen.textContent = formatCount(stats.counts?.women);
+    infoNational.textContent = formatCount(stats.counts?.men ?? "--");
+    labelTotal.textContent = "Times";
+    labelClubs.textContent = "NBA";
+    labelWomen.textContent = "WNBA";
+    labelNational.textContent = "Masc";
   } else {
-    infoTotal.textContent = formatCount("Total", stats.total_teams);
-    infoClubs.textContent = formatCount("Clubes", stats.counts?.clubs);
-    infoWomen.textContent = formatCount("Feminino", stats.counts?.women);
-    infoNational.textContent = formatCount("Selecoes", stats.counts?.national);
+    infoTotal.textContent = formatCount(stats.total_teams);
+    infoClubs.textContent = formatCount(stats.counts?.clubs);
+    infoWomen.textContent = formatCount(stats.counts?.women);
+    infoNational.textContent = formatCount(stats.counts?.national);
+    labelTotal.textContent = "Times";
+    labelClubs.textContent = "Clubes";
+    labelWomen.textContent = "Feminino";
+    labelNational.textContent = "Selecoes";
   }
 }
 

@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="pt-br">
 <head>
@@ -39,6 +38,19 @@
       min-height: 100vh;
     }
 
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(circle at 1px 1px, rgba(15, 23, 42, 0.08) 1px, transparent 0),
+        radial-gradient(circle at 1px 1px, rgba(15, 23, 42, 0.06) 1px, transparent 0);
+      background-size: 32px 32px, 8px 8px;
+      opacity: 0.28;
+      pointer-events: none;
+      z-index: 0;
+    }
+
     body.theme-nba {
       --accent: #f97316;
       --accent-2: #ef4444;
@@ -52,13 +64,15 @@
       max-width: 1180px;
       margin: 0 auto;
       padding: 30px 20px 70px;
+      position: relative;
+      z-index: 1;
     }
 
     .glass {
-      background: var(--card);
-      border: 1px solid var(--stroke);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.86));
+      border: 1px solid rgba(13, 21, 38, 0.08);
       border-radius: var(--radius);
-      box-shadow: var(--shadow);
+      box-shadow: 0 24px 70px rgba(10, 20, 45, 0.14);
       backdrop-filter: blur(12px);
     }
 
@@ -104,8 +118,8 @@
     }
 
     .btn-ghost {
-      border: 1px solid var(--stroke);
-      background: transparent;
+      border: 1px solid rgba(13, 21, 38, 0.16);
+      background: rgba(255, 255, 255, 0.6);
       color: var(--ink);
       font-weight: 600;
     }
@@ -115,6 +129,7 @@
       border: none;
       color: #0b1320;
       font-weight: 700;
+      box-shadow: 0 12px 30px rgba(34, 197, 94, 0.35);
     }
 
     .hero {
@@ -140,19 +155,34 @@
 
     .muted { color: var(--muted); }
 
-    .stats-inline {
-      display: flex;
+    .stats-inline { display: none; }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 10px;
-      flex-wrap: wrap;
-      font-size: 0.85rem;
+      min-width: 280px;
     }
 
-    .stat-pill {
-      padding: 6px 12px;
-      border-radius: 999px;
-      border: 1px solid var(--stroke);
-      background: rgba(255, 255, 255, 0.7);
-      font-weight: 600;
+    .kpi {
+      border-radius: 16px;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(13, 21, 38, 0.12);
+      display: grid;
+      gap: 2px;
+    }
+
+    .kpi-value {
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    .kpi-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
     }
 
     .dataset-tabs {
@@ -160,8 +190,9 @@
       gap: 8px;
       padding: 6px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.7);
-      border: 1px solid var(--stroke);
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(13, 21, 38, 0.12);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
     }
 
     .dataset-tab {
@@ -306,6 +337,26 @@
       justify-content: space-between;
       gap: 16px;
       padding: 16px 18px;
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.16), rgba(34, 197, 94, 0.16));
+    }
+
+    .pro-price {
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .live-pill {
+      align-self: start;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(14, 165, 233, 0.4);
+      background: rgba(14, 165, 233, 0.12);
+      color: #0b1320;
+      font-size: 0.82rem;
+      font-weight: 600;
     }
 
     .reveal {
@@ -323,6 +374,7 @@
       .layout { grid-template-columns: 1fr; }
       .topbar { flex-direction: column; align-items: flex-start; }
       .hero-row { align-items: flex-start; }
+      .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
   </style>
 </head>
@@ -354,14 +406,26 @@
           <button class="dataset-tab active" id="datasetFc25Btn" data-dataset="fc25">Futebol</button>
           <button class="dataset-tab" id="datasetNbaBtn" data-dataset="nba">Basquete</button>
         </div>
-        <div class="stats-inline">
-          <span class="stat-pill" id="infoTotal">Total: --</span>
-          <span class="stat-pill" id="infoClubs">Clubes: --</span>
-          <span class="stat-pill" id="infoWomen">Feminino: --</span>
-          <span class="stat-pill" id="infoNational">Selecoes: --</span>
+        <div class="kpi-grid">
+          <div class="kpi">
+            <div class="kpi-value" id="infoTotal">--</div>
+            <div class="kpi-label" id="labelTotal">Times</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-value" id="infoClubs">--</div>
+            <div class="kpi-label" id="labelClubs">Clubes</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-value" id="infoWomen">--</div>
+            <div class="kpi-label" id="labelWomen">Feminino</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-value" id="infoNational">--</div>
+            <div class="kpi-label" id="labelNational">Selecoes</div>
+          </div>
         </div>
       </div>
-      <div class="muted small">Modo live: clique no vencedor para avancar.</div>
+      <div class="live-pill">Ao vivo: clique no vencedor</div>
     </section>
 
     <section id="config" class="layout">
@@ -369,7 +433,10 @@
         <div class="glass p-3 reveal">
           <div class="d-flex align-items-center justify-content-between mb-2">
             <div class="section-title mb-0">Participantes</div>
-            <span class="stat-pill" id="participantCount">0</span>
+            <span class="kpi" style="padding: 6px 10px;">
+              <span class="kpi-value" id="participantCount">0</span>
+              <span class="kpi-label">Jogadores</span>
+            </span>
           </div>
           <div class="input-group mb-2">
             <input id="participantInput" class="form-control" placeholder="Nome do participante" />
@@ -386,7 +453,7 @@
 
         <div class="glass p-3 reveal">
           <div class="section-title">Plano Pro</div>
-          <div class="muted mb-2">Exportacao ilimitada, historico e novos modos primeiro.</div>
+          <div class="muted mb-2">Desbloqueie exportacoes ilimitadas, historico e modos online.</div>
           <a class="btn btn-ghost btn-sm js-pro-link" data-whatsapp="" href="#">Assinar</a>
         </div>
       </div>
@@ -487,9 +554,10 @@
 
     <section class="pro-strip glass reveal">
       <div>
-        <div class="section-title">Sorteio Pro</div>
-        <div class="muted">Desbloqueie exportacoes e historico completo.</div>
+        <div class="section-title">Sorteio Pro mensal</div>
+        <div class="muted">Exportacoes ilimitadas e recursos premium.</div>
       </div>
+      <div class="pro-price">R$ 14,90/m?s</div>
       <a class="btn btn-accent js-pro-link" data-whatsapp="" href="#">Assinar</a>
     </section>
   </div>
