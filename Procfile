@@ -1,1 +1,1 @@
-web: gunicorn -k eventlet -w 1 -b 0.0.0.0: app:app
+web: gunicorn -k gthread -w 1 -b 0.0.0.0:$PORT app:app

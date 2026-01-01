@@ -7,7 +7,6 @@ from datetime import datetime
 from functools import wraps
 from typing import Any, Dict, Optional
 
-import eventlet
 from flask import (
     Flask,
     abort,
@@ -25,14 +24,12 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from services.datasets import compute_stats, list_datasets, load_rows
 from services.draws import apply_filters, draw_assignments, make_bracket, make_round_robin
 
-eventlet.monkey_patch()
-
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(APP_DIR, "data", "history.sqlite3")
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret")
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
 
 def _now_iso() -> str:

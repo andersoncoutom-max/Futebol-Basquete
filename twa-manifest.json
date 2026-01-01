@@ -18,7 +18,7 @@
   "splashScreenFadeOutDuration": 300,
   "signingKey": {
     "path": "C:\\Users\\anderson.couto_agenc\\OneDrive\\Desktop\\fc25_sorteio\\android.keystore",
-    "alias": "sorteiopro"
+    "alias": "Sorteiopro"
   },
   "appVersionName": "1",
   "appVersionCode": 1,
