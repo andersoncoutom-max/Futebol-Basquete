@@ -9,18 +9,20 @@
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="manifest" href="/static/manifest.webmanifest">
-  <meta name="theme-color" content="#111827">
+  <meta name="theme-color" content="#0b1f2a">
   <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
   <style>
     :root {
-      --bg: #eef2f7;
-      --bg-2: #f6f8fc;
-      --ink: #0d1526;
-      --muted: rgba(13, 21, 38, 0.58);
+      --bg: #f5f7fb;
+      --bg-2: #eef2f9;
+      --ink: #0c1b33;
+      --muted: rgba(15, 30, 50, 0.62);
       --card: rgba(255, 255, 255, 0.92);
-      --stroke: rgba(13, 21, 38, 0.12);
-      --accent: #22c55e;
-      --accent-2: #0ea5e9;
+      --stroke: rgba(12, 27, 51, 0.12);
+      --accent: #16c3b5;
+      --accent-2: #18b26b;
+      --dark-1: #0b1f2a;
+      --dark-2: #0f343d;
       --shadow: 0 24px 70px rgba(10, 20, 45, 0.18);
       --radius: 22px;
     }
@@ -32,8 +34,8 @@
       font-family: "Sora", system-ui, -apple-system, "Segoe UI", sans-serif;
       color: var(--ink);
       background:
-        radial-gradient(900px 520px at 0% -10%, rgba(14, 165, 233, 0.16), transparent 55%),
-        radial-gradient(900px 520px at 100% 0%, rgba(34, 197, 94, 0.16), transparent 55%),
+        radial-gradient(900px 520px at 0% -10%, rgba(22, 195, 181, 0.16), transparent 55%),
+        radial-gradient(900px 520px at 100% 0%, rgba(24, 178, 107, 0.12), transparent 55%),
         linear-gradient(180deg, var(--bg), var(--bg-2));
       min-height: 100vh;
     }
@@ -43,8 +45,8 @@
       position: fixed;
       inset: 0;
       background-image:
-        radial-gradient(circle at 1px 1px, rgba(15, 23, 42, 0.08) 1px, transparent 0),
-        radial-gradient(circle at 1px 1px, rgba(15, 23, 42, 0.06) 1px, transparent 0);
+        radial-gradient(circle at 1px 1px, rgba(12, 27, 51, 0.08) 1px, transparent 0),
+        radial-gradient(circle at 1px 1px, rgba(12, 27, 51, 0.06) 1px, transparent 0);
       background-size: 32px 32px, 8px 8px;
       opacity: 0.28;
       pointer-events: none;
@@ -82,6 +84,9 @@
       justify-content: space-between;
       gap: 16px;
       padding: 14px 18px;
+      background: linear-gradient(135deg, var(--dark-1), var(--dark-2));
+      color: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .brand {
@@ -97,7 +102,7 @@
       background: linear-gradient(135deg, var(--accent), var(--accent-2));
       display: grid;
       place-items: center;
-      color: #0d1526;
+      color: #0b1320;
       font-weight: 700;
       font-size: 0.9rem;
       letter-spacing: 0.04em;
@@ -109,7 +114,7 @@
       letter-spacing: 0.01em;
     }
 
-    .brand-sub { color: var(--muted); font-size: 0.9rem; }
+    .brand-sub { color: rgba(255, 255, 255, 0.72); font-size: 0.9rem; }
 
     .topbar-actions {
       display: flex;
@@ -118,14 +123,20 @@
     }
 
     .btn-ghost {
-      border: 1px solid rgba(13, 21, 38, 0.16);
-      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(12, 27, 51, 0.16);
+      background: rgba(255, 255, 255, 0.7);
       color: var(--ink);
       font-weight: 600;
     }
 
+    .topbar .btn-ghost {
+      border-color: rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.92);
+    }
+
     .btn-accent {
-      background: linear-gradient(135deg, var(--accent), #bbf7d0);
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
       border: none;
       color: #0b1320;
       font-weight: 700;
@@ -152,8 +163,8 @@
       gap: 8px;
       padding: 6px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.78);
-      border: 1px solid rgba(13, 21, 38, 0.12);
+      background: rgba(15, 23, 42, 0.06);
+      border: 1px solid rgba(15, 23, 42, 0.12);
       box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
     }
 
@@ -167,8 +178,8 @@
     }
 
     .dataset-tab.active {
-      background: linear-gradient(135deg, rgba(14, 165, 233, 0.25), rgba(34, 197, 94, 0.2));
-      border: 1px solid rgba(14, 165, 233, 0.6);
+      background: linear-gradient(135deg, rgba(22, 195, 181, 0.22), rgba(24, 178, 107, 0.2));
+      border: 1px solid rgba(22, 195, 181, 0.6);
     }
 
     .tabs {
@@ -178,12 +189,14 @@
       gap: 8px;
       flex-wrap: wrap;
       align-items: center;
+      background: linear-gradient(135deg, rgba(11, 31, 42, 0.95), rgba(15, 52, 61, 0.95));
+      border: 1px solid rgba(255, 255, 255, 0.14);
     }
 
     .tab-btn {
-      border: 1px solid rgba(13, 21, 38, 0.16);
-      background: rgba(255, 255, 255, 0.7);
-      color: var(--ink);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.9);
       font-weight: 700;
       padding: 8px 14px;
       border-radius: 999px;
@@ -191,9 +204,10 @@
     }
 
     .tab-btn.active {
-      background: linear-gradient(135deg, var(--accent), #bbf7d0);
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
       border: none;
-      box-shadow: 0 12px 30px rgba(34, 197, 94, 0.25);
+      color: #0b1320;
+      box-shadow: 0 12px 30px rgba(22, 195, 181, 0.25);
     }
 
     .tab-panels {
@@ -266,7 +280,7 @@
 
     .alert-danger {
       background: rgba(255, 71, 87, 0.12);
-      color: #b91c1c;
+      color: #7f1d1d;
       border-color: rgba(255, 71, 87, 0.3);
     }
 
