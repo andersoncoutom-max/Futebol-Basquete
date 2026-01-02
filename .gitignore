@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+data/history.sqlite3
+android.keystore
+*.apk
+*.aab
+build/
+app/build/
+.gradle/
