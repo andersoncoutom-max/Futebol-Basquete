@@ -20,6 +20,7 @@
   const playersList = el("playersList");
   const matchesList = el("matchesList");
   const errorBox = el("errorBox");
+  const entryError = el("entryError");
   const copyCodeBtn = el("copyCodeBtn");
   const startBtn = el("startBtn");
   const startMode = el("startMode");
@@ -30,13 +31,39 @@
   const datasetLabel = (dataset) => (dataset === "nba" ? "NBA 2K25" : "FC 25");
 
   const showError = (msg) => {
-    errorBox.textContent = msg;
-    errorBox.classList.remove("d-none");
+    if (errorBox) {
+      errorBox.textContent = msg;
+      errorBox.classList.remove("d-none");
+    }
+    if (entryError) {
+      entryError.textContent = msg;
+      entryError.classList.remove("d-none");
+    }
   };
 
   const clearError = () => {
-    errorBox.textContent = "";
-    errorBox.classList.add("d-none");
+    if (errorBox) {
+      errorBox.textContent = "";
+      errorBox.classList.add("d-none");
+    }
+    if (entryError) {
+      entryError.textContent = "";
+      entryError.classList.add("d-none");
+    }
+  };
+
+  const setLoading = (btn, loading, label) => {
+    if (!btn) return;
+    if (loading) {
+      btn.dataset.label = btn.textContent;
+      btn.textContent = label;
+      btn.disabled = true;
+      return;
+    }
+    if (btn.dataset.label) {
+      btn.textContent = btn.dataset.label;
+      delete btn.dataset.label;
+    }
   };
 
   const api = async (path, options = {}) => {
@@ -166,6 +193,11 @@
   createBtn.addEventListener("click", async () => {
     try {
       clearError();
+      if (!createName.value.trim() || !createDisplay.value.trim()) {
+        showError("Informe o nome da sala e seu apelido.");
+        return;
+      }
+      setLoading(createBtn, true, "Criando...");
       const payload = {
         name: createName.value.trim(),
         dataset: createDataset.value,
@@ -180,12 +212,19 @@
       await loadTournament(data.code);
     } catch (err) {
       showError(err.message);
+    } finally {
+      setLoading(createBtn, false);
     }
   });
 
   joinBtn.addEventListener("click", async () => {
     try {
       clearError();
+      if (!joinCode.value.trim() || !joinDisplay.value.trim()) {
+        showError("Informe o codigo da sala e seu apelido.");
+        return;
+      }
+      setLoading(joinBtn, true, "Entrando...");
       const payload = {
         code: joinCode.value.trim().toUpperCase(),
         display_name: joinDisplay.value.trim(),
@@ -197,6 +236,8 @@
       await loadTournament(data.code);
     } catch (err) {
       showError(err.message);
+    } finally {
+      setLoading(joinBtn, false);
     }
   });
 
@@ -225,10 +266,14 @@
     }
   });
 
+  let updateTimer = null;
   socket.on("tournament_update", (payload) => {
-    if (payload.code && payload.code === state.code) {
+    if (!payload.code || payload.code !== state.code) return;
+    if (updateTimer) return;
+    updateTimer = setTimeout(() => {
       loadTournament(state.code).catch(() => {});
-    }
+      updateTimer = null;
+    }, 300);
   });
 
   const saved = localStorage.getItem("tournamentCode");
