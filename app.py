@@ -29,7 +29,13 @@ DB_PATH = os.path.join(APP_DIR, "data", "history.sqlite3")
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret")
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode="threading",
+    ping_interval=25,
+    ping_timeout=60,
+)
 
 
 def _now_iso() -> str:
