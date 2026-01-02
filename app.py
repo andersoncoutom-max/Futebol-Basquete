@@ -1,6 +1,7 @@
 
 import json
 import os
+import random
 import secrets
 import sqlite3
 from datetime import datetime
@@ -21,7 +22,7 @@ from flask import (
 from werkzeug.security import generate_password_hash
 
 from services.datasets import compute_stats, list_datasets, load_rows
-from services.draws import apply_filters, draw_assignments, make_bracket, make_round_robin
+from services.draws import apply_filters, balance_pool_by_tiers, draw_assignments, make_bracket, make_round_robin
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(APP_DIR, "data", "history.sqlite3")
@@ -356,6 +357,11 @@ def api_draw():
     dataset = payload.get("dataset") or "fc25"
     participants = payload.get("participants") or []
     filters = payload.get("filters") or None
+    balance_mode = (payload.get("balance_mode") or "random").strip().lower()
+    avoid_repeat = bool(payload.get("avoid_repeat") or False)
+    avoid_repeat_window = int(payload.get("avoid_repeat_window") or 1)
+    exclude_team_ids = payload.get("exclude_team_ids") or []
+    seed = (payload.get("seed") or "").strip()
 
     if not isinstance(participants, list) or not all(isinstance(p, str) for p in participants):
         return jsonify({"error": "participants deve ser uma lista de strings."}), 400
@@ -408,22 +414,37 @@ def api_draw():
     try:
         rows = load_rows(dataset)
         pool = apply_filters(rows, filters)
+        if exclude_team_ids:
+            exclude_set = {str(x) for x in exclude_team_ids}
+            pool = [t for t in pool if str(t.get("team_id")) not in exclude_set]
+        if balance_mode == "tiers":
+            pool = balance_pool_by_tiers(pool)
         if len(participants) > len(pool):
             return jsonify(
                 {
                     "error": f"Participantes ({len(participants)}) maior que times disponiveis no pool ({len(pool)})."
                 }
             ), 400
+        if seed:
+            random.seed(seed)
         draw_rows = draw_assignments(participants, pool)
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+    meta = {
+        "seed": seed or "auto",
+        "timestamp": _now_iso(),
+        "balance_mode": balance_mode,
+        "avoid_repeat": avoid_repeat,
+        "avoid_repeat_window": avoid_repeat_window,
+    }
     out = {
         "dataset": dataset,
         "participants": participants,
         "filters": filters,
         "pool_count": len(pool),
         "draw": draw_rows,
+        "meta": meta,
     }
     save_history(dataset, out)
     return jsonify(out)

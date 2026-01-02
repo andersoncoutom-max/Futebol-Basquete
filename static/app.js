@@ -1,5 +1,6 @@
 
 const participants = [];
+let lastRemoved = null;
 let lastDraw = null;
 
 const PRO_DEFAULT_URL = "https://wa.me/55SEU_NUMERO?text=Quero%20assinar%20o%20Sorteio%20Pro";
@@ -13,8 +14,67 @@ const bracketState = {
   pendingByes: []
 };
 
+const presets = {
+  quick: {
+    balance: "random",
+    mode: "all",
+    topN: 10,
+    category: "all",
+    avoidRepeat: false,
+    avoidRepeatWindow: 1
+  },
+  campeonato: {
+    balance: "tiers",
+    mode: "top",
+    topN: 20,
+    category: "clubs",
+    avoidRepeat: true,
+    avoidRepeatWindow: 3
+  },
+  selecoes: {
+    balance: "tiers",
+    mode: "all",
+    topN: 10,
+    category: "national",
+    avoidRepeat: false,
+    avoidRepeatWindow: 1
+  },
+  classicos: {
+    balance: "tiers",
+    mode: "top",
+    topN: 16,
+    category: "clubs_men",
+    avoidRepeat: true,
+    avoidRepeatWindow: 1
+  }
+};
+
 const tabButtons = document.querySelectorAll("[data-tab-target]");
 const tabPanels = document.querySelectorAll(".tab-panel");
+const themeButtons = document.querySelectorAll("[data-theme]");
+
+const themeCopy = {
+  champions: {
+    kicker: "Sorteio de Times para EA FC",
+    title: "Noite de Champions",
+    subtitle: "Organize confrontos grandes e sorteie times de forma rapida."
+  },
+  libertadores: {
+    kicker: "Sorteio de Times para EA FC",
+    title: "Ritmo de Libertadores",
+    subtitle: "Monte a lista e gere chaveamentos com clima de decisao."
+  },
+  selecoes: {
+    kicker: "Sorteio de Times para EA FC",
+    title: "Noite de Selecoes",
+    subtitle: "Sorteie selecoes e mantenha o equilibrio entre os jogadores."
+  },
+  classicos: {
+    kicker: "Sorteio de Times para EA FC",
+    title: "Classicos e rivalidades",
+    subtitle: "Rapido para montar elencos e dividir os times."
+  }
+};
 
 function setActiveTab(tabId) {
   if (!tabButtons.length || !tabPanels.length) return;
@@ -34,8 +94,56 @@ tabButtons.forEach((btn) => {
   });
 });
 
+function setTheme(theme) {
+  const body = document.body;
+  if (!body) return;
+  body.classList.remove("theme-champions", "theme-libertadores", "theme-selecoes", "theme-classicos");
+  if (theme) body.classList.add(`theme-${theme}`);
+
+  themeButtons.forEach((btn) => {
+    btn.classList.toggle("active", btn.getAttribute("data-theme") === theme);
+  });
+
+  const copy = themeCopy[theme];
+  if (copy) {
+    const kicker = document.getElementById("heroKicker");
+    const title = document.getElementById("heroTitle");
+    const subtitle = document.getElementById("heroSubtitle");
+    if (kicker) kicker.textContent = copy.kicker;
+    if (title) title.textContent = copy.title;
+    if (subtitle) subtitle.textContent = copy.subtitle;
+  }
+}
+
 function normalizeName(name) {
   return String(name || "").trim();
+}
+
+function generateSeed() {
+  return Math.random().toString(16).slice(2, 6).toUpperCase();
+}
+
+function applyPreset(name) {
+  const preset = presets[name];
+  if (!preset) return;
+  const balanceSelect = document.getElementById("balanceSelect");
+  const modeSelect = document.getElementById("modeSelect");
+  const topNInput = document.getElementById("topNInput");
+  const categorySelect = document.getElementById("categorySelect");
+  const avoidRepeatToggle = document.getElementById("avoidRepeatToggle");
+  const avoidRepeat3Toggle = document.getElementById("avoidRepeat3Toggle");
+
+  if (balanceSelect) balanceSelect.value = preset.balance;
+  if (modeSelect) modeSelect.value = preset.mode;
+  if (topNInput) topNInput.value = String(preset.topN);
+  if (categorySelect) {
+    const hasOption = Array.from(categorySelect.options).some((opt) => opt.value === preset.category);
+    if (hasOption) {
+      categorySelect.value = preset.category;
+    }
+  }
+  if (avoidRepeatToggle) avoidRepeatToggle.checked = preset.avoidRepeat;
+  if (avoidRepeat3Toggle) avoidRepeat3Toggle.checked = preset.avoidRepeatWindow === 3;
 }
 
 function renderParticipants() {
@@ -45,18 +153,26 @@ function renderParticipants() {
 
   ul.innerHTML = "";
 
+  if (!participants.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state muted small";
+    empty.textContent = "Cole uma lista: Anderson, Joao, Maria...";
+    ul.appendChild(empty);
+    return;
+  }
+
   participants.forEach((name, idx) => {
-    const li = document.createElement("li");
-    li.className = "list-group-item d-flex justify-content-between align-items-center";
+    const li = document.createElement("div");
+    li.className = "chip";
 
     const span = document.createElement("span");
     span.textContent = name;
 
     const btn = document.createElement("button");
-    btn.className = "btn btn-sm btn-outline-light";
-    btn.textContent = "Remover";
+    btn.className = "chip-remove";
+    btn.textContent = "x";
     btn.onclick = () => {
-      participants.splice(idx, 1);
+      lastRemoved = participants.splice(idx, 1)[0];
       renderParticipants();
     };
 
@@ -274,6 +390,26 @@ function renderEntry(entry, isWinner) {
   return btn;
 }
 
+function swapHomeAway() {
+  if (!bracketState.rounds.length) return;
+  const round = bracketState.rounds[bracketState.rounds.length - 1];
+  round.matches.forEach((match) => {
+    [match.a, match.b] = [match.b, match.a];
+    if (match.winner === "a") match.winner = "b";
+    else if (match.winner === "b") match.winner = "a";
+    [match.scoreA, match.scoreB] = [match.scoreB, match.scoreA];
+  });
+  renderBracket();
+}
+
+function applyScoreWinner(match) {
+  const scoreA = Number(match.scoreA ?? "");
+  const scoreB = Number(match.scoreB ?? "");
+  if (Number.isNaN(scoreA) || Number.isNaN(scoreB)) return;
+  if (scoreA === scoreB) return;
+  match.winner = scoreA > scoreB ? "a" : "b";
+}
+
 function drawBracketLines() {
   const svg = document.getElementById("bracketLines");
   const grid = document.getElementById("bracketContainer");
@@ -359,10 +495,42 @@ function renderBracket() {
       vs.className = "match-vs";
       vs.textContent = "VS";
 
+      const scoreRow = document.createElement("div");
+      scoreRow.className = "match-score";
+      const inputA = document.createElement("input");
+      inputA.type = "number";
+      inputA.min = "0";
+      inputA.value = match.scoreA ?? "";
+      inputA.placeholder = "-";
+      inputA.onchange = (e) => {
+        match.scoreA = e.target.value === "" ? null : parseInt(e.target.value, 10);
+      };
+      const inputB = document.createElement("input");
+      inputB.type = "number";
+      inputB.min = "0";
+      inputB.value = match.scoreB ?? "";
+      inputB.placeholder = "-";
+      inputB.onchange = (e) => {
+        match.scoreB = e.target.value === "" ? null : parseInt(e.target.value, 10);
+      };
+      const applyBtn = document.createElement("button");
+      applyBtn.type = "button";
+      applyBtn.textContent = "Confirmar";
+      applyBtn.onclick = () => {
+        applyScoreWinner(match);
+        renderBracket();
+        maybeAdvance(rIdx);
+      };
+      scoreRow.appendChild(inputA);
+      scoreRow.appendChild(document.createTextNode("x"));
+      scoreRow.appendChild(inputB);
+      scoreRow.appendChild(applyBtn);
+
       card.appendChild(header);
       card.appendChild(aBtn);
       card.appendChild(vs);
       card.appendChild(bBtn);
+      card.appendChild(scoreRow);
       col.appendChild(card);
     });
 
@@ -497,22 +665,32 @@ function setDataset(dataset) {
   }
   updateDatasetTabs();
   updateCategoryOptions();
+  if (presetSelect) applyPreset(presetSelect.value);
   loadTeamsInfo();
   resetBracket();
 
   const rrBox = document.getElementById("rrBox");
   if (rrBox) rrBox.classList.add("d-none");
 
-  const tbody = document.getElementById("resultTbody");
-  if (tbody) {
-    tbody.innerHTML = "";
+  const cards = document.getElementById("resultCards");
+  if (cards) {
+    cards.innerHTML = "";
   }
   lastDraw = null;
   setActionButtons(false);
 }
 
 function setActionButtons(enabled) {
-  const ids = ["bracketBtn", "rrBtn", "copyBtn", "csvBtn", "pngBtn", "exportBtn", "shareBtn"];
+  const ids = [
+    "bracketBtn",
+    "rrBtn",
+    "copyBtn",
+    "shareBtn",
+    "shareTextBtn",
+    "shareResultPngBtn",
+    "shareBracketPngBtn",
+    "swapHomeBtn"
+  ];
   ids.forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.disabled = !enabled;
@@ -608,20 +786,72 @@ async function shareLink() {
   if (!lastDraw) return;
   clearError();
   try {
-    const r = await fetch("/api/share", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify(lastDraw)
+    const meta = lastDraw.meta || {};
+    const balanceLabel = meta.balance_mode === "tiers" ? "tiers A/B/C/D" : "aleatorio";
+    const repeatLabel = meta.avoid_repeat ? `sem repeticao (${meta.avoid_repeat_window || 1})` : "repeticao liberada";
+    const lines = (lastDraw.draw || []).map((row) => {
+      const label = categoryLabel(row.team_type, row.gender);
+      return `${row.participant} - ${row.team_name} (${label})`;
     });
-    const j = await r.json();
-    if (!r.ok) {
-      showError(j.error || "Erro ao compartilhar.");
-      return;
-    }
-    const url = j.url || window.location.href;
-    await navigator.clipboard.writeText(url);
+    const text = [
+      "Sorteio de Times - EA FC",
+      `Data: ${meta.timestamp ? new Date(meta.timestamp).toLocaleString() : new Date().toLocaleString()}`,
+      `Seed: ${meta.seed || "N/A"} | Balanceamento: ${balanceLabel} | ${repeatLabel}`,
+      "",
+      ...lines
+    ].join("\n");
+    await navigator.clipboard.writeText(text);
   } catch {
-    showError("Nao foi possivel copiar o link.");
+    showError("Nao foi possivel copiar o texto.");
+  }
+}
+
+async function exportResultPng() {
+  if (!lastDraw) return;
+  const target = document.getElementById("step-sorteio");
+  if (!target || typeof html2canvas === "undefined") {
+    showError("PNG indisponivel no momento.");
+    return;
+  }
+  try {
+    const canvas = await html2canvas(target, { backgroundColor: null, scale: 2 });
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "sorteio.png";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+  } catch {
+    showError("Falha ao gerar PNG.");
+  }
+}
+
+async function exportBracketPng() {
+  const target = document.getElementById("step-chaveamento");
+  if (!target || typeof html2canvas === "undefined") {
+    showError("PNG indisponivel no momento.");
+    return;
+  }
+  try {
+    const canvas = await html2canvas(target, { backgroundColor: null, scale: 2 });
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "chaveamento.png";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+  } catch {
+    showError("Falha ao gerar PNG.");
   }
 }
 
@@ -710,11 +940,68 @@ if (importBtn) {
   });
 }
 
+const pasteBtn = document.getElementById("pasteBtn");
+if (pasteBtn) {
+  pasteBtn.addEventListener("click", async () => {
+    if (!navigator.clipboard?.readText) {
+      showError("Clipboard indisponivel no navegador.");
+      return;
+    }
+    try {
+      const text = await navigator.clipboard.readText();
+      const lines = String(text || "")
+        .split(/[\r\n,;]+/)
+        .map((s) => normalizeName(s))
+        .filter(Boolean);
+      lines.forEach((name) => {
+        const exists = participants.some((p) => p.toLowerCase() === name.toLowerCase());
+        if (!exists) participants.push(name);
+      });
+      renderParticipants();
+    } catch {
+      showError("Nao foi possivel acessar o clipboard.");
+    }
+  });
+}
+
+const undoBtn = document.getElementById("undoBtn");
+if (undoBtn) {
+  undoBtn.addEventListener("click", () => {
+    if (!lastRemoved) return;
+    const exists = participants.some((p) => p.toLowerCase() === lastRemoved.toLowerCase());
+    if (!exists) participants.push(lastRemoved);
+    lastRemoved = null;
+    renderParticipants();
+  });
+}
+
+const sortParticipantsBtn = document.getElementById("sortParticipantsBtn");
+if (sortParticipantsBtn) {
+  sortParticipantsBtn.addEventListener("click", () => {
+    participants.sort((a, b) => a.localeCompare(b));
+    renderParticipants();
+  });
+}
+
 const clearBtn = document.getElementById("clearParticipantsBtn");
 if (clearBtn) {
   clearBtn.addEventListener("click", () => {
     participants.length = 0;
+    lastRemoved = null;
     renderParticipants();
+  });
+}
+
+const newSeasonBtn = document.getElementById("newSeasonBtn");
+if (newSeasonBtn) {
+  newSeasonBtn.addEventListener("click", () => {
+    lastDraw = null;
+    resetBracket();
+    const cards = document.getElementById("resultCards");
+    if (cards) cards.innerHTML = "";
+    const resultMeta = document.getElementById("resultMeta");
+    if (resultMeta) resultMeta.textContent = "";
+    setActionButtons(false);
   });
 }
 
@@ -738,6 +1025,28 @@ if (datasetNbaBtn) {
   datasetNbaBtn.addEventListener("click", () => setDataset("nba"));
 }
 
+const presetSelect = document.getElementById("presetSelect");
+if (presetSelect) {
+  presetSelect.addEventListener("change", (e) => {
+    applyPreset(e.target.value);
+  });
+}
+
+const seedBtn = document.getElementById("seedBtn");
+if (seedBtn) {
+  seedBtn.addEventListener("click", () => {
+    const seedInput = document.getElementById("seedInput");
+    if (seedInput) seedInput.value = generateSeed();
+  });
+}
+
+themeButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const theme = btn.getAttribute("data-theme");
+    setTheme(theme);
+  });
+});
+
 const drawBtn = document.getElementById("drawBtn");
 if (drawBtn) {
   drawBtn.addEventListener("click", async () => {
@@ -745,6 +1054,12 @@ if (drawBtn) {
     const mode = document.getElementById("modeSelect").value;
     const topN = parseInt(document.getElementById("topNInput").value || "10", 10);
     const category = document.getElementById("categorySelect").value;
+    const balanceMode = document.getElementById("balanceSelect")?.value || "random";
+    const avoidRepeat = Boolean(document.getElementById("avoidRepeatToggle")?.checked);
+    const avoidRepeat3 = Boolean(document.getElementById("avoidRepeat3Toggle")?.checked);
+    const seedInput = document.getElementById("seedInput");
+    const seedValue = seedInput?.value?.trim() || generateSeed();
+    if (seedInput) seedInput.value = seedValue;
 
     if (participants.length === 0) {
       showError("Adicione ao menos 1 participante.");
@@ -752,6 +1067,17 @@ if (drawBtn) {
     }
 
     try {
+      let exclude = [];
+      if (avoidRepeat || avoidRepeat3) {
+        const history = JSON.parse(localStorage.getItem("lastDrawTeamsHistory") || "[]");
+        const flatHistory = history.flat();
+        const stored = JSON.parse(localStorage.getItem("lastDrawTeams") || "[]");
+        exclude = avoidRepeat3 ? flatHistory : stored;
+        if (!exclude.length && lastDraw?.draw) {
+          exclude = lastDraw.draw.map((row) => row.team_id).filter(Boolean);
+        }
+      }
+
       const r = await fetch("/api/draw", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
@@ -760,7 +1086,12 @@ if (drawBtn) {
           participants,
           mode,
           top_n: topN,
-          category
+          category,
+          balance_mode: balanceMode,
+          avoid_repeat: avoidRepeat || avoidRepeat3,
+          avoid_repeat_window: avoidRepeat3 ? 3 : 1,
+          exclude_team_ids: exclude,
+          seed: seedValue
         })
       });
 
@@ -771,27 +1102,46 @@ if (drawBtn) {
       }
 
       lastDraw = j;
+      const used = (j.draw || []).map((row) => row.team_id).filter(Boolean);
+      localStorage.setItem("lastDrawTeams", JSON.stringify(used));
+      const history = JSON.parse(localStorage.getItem("lastDrawTeamsHistory") || "[]");
+      history.unshift(used);
+      localStorage.setItem("lastDrawTeamsHistory", JSON.stringify(history.slice(0, 3)));
       setActionButtons(true);
 
-      const tbody = document.getElementById("resultTbody");
-      tbody.innerHTML = "";
-      j.draw.forEach((row) => {
-        const tr = document.createElement("tr");
-        const label = categoryLabel(row.team_type, row.gender);
-        tr.innerHTML = `
-          <td>${row.participant}</td>
-          <td>${row.team_name}</td>
-          <td>${label}</td>
-          <td>${row.overall}</td>
-          <td>${row.attack}</td>
-          <td>${row.midfield}</td>
-          <td>${row.defence}</td>
-        `;
-        tbody.appendChild(tr);
-      });
+      const cards = document.getElementById("resultCards");
+      if (cards) {
+        cards.innerHTML = "";
+        j.draw.forEach((row) => {
+          const label = categoryLabel(row.team_type, row.gender);
+          const card = document.createElement("div");
+          card.className = "result-card";
+          card.innerHTML = `
+            <div class="player">${row.participant}</div>
+            <div class="team">${row.team_name}</div>
+            <div class="muted small">${label}</div>
+            <div class="result-badges">
+              <span class="badge-pill">OVR ${row.overall}</span>
+              <span class="badge-pill">ATT ${row.attack}</span>
+              <span class="badge-pill">MID ${row.midfield}</span>
+              <span class="badge-pill">DEF ${row.defence}</span>
+            </div>
+          `;
+          cards.appendChild(card);
+        });
+      }
 
       buildBracket(j.draw);
-      setActiveTab("resultados");
+      const resultMeta = document.getElementById("resultMeta");
+      if (resultMeta) {
+        const meta = j.meta || {};
+        const when = meta.timestamp ? new Date(meta.timestamp).toLocaleString() : "";
+        const seedLabel = meta.seed === "auto" ? seedValue : meta.seed || seedValue;
+        const balanceLabel = meta.balance_mode === "tiers" ? "tiers A/B/C/D" : "aleatorio";
+        const repeatLabel = meta.avoid_repeat ? `sem repeticao (${meta.avoid_repeat_window || 1})` : "repeticao liberada";
+        resultMeta.textContent = `Seed: ${seedLabel} | ${when} | Balanceamento: ${balanceLabel} | ${repeatLabel}`;
+      }
+      setActiveTab("sorteio");
 
     } catch (e) {
       showError("Falha de comunicacao com o servidor.");
@@ -828,6 +1178,18 @@ if (exportBtn) exportBtn.addEventListener("click", exportXlsx);
 const shareBtn = document.getElementById("shareBtn");
 if (shareBtn) shareBtn.addEventListener("click", shareLink);
 
+const shareTextBtn = document.getElementById("shareTextBtn");
+if (shareTextBtn) shareTextBtn.addEventListener("click", shareLink);
+
+const shareResultPngBtn = document.getElementById("shareResultPngBtn");
+if (shareResultPngBtn) shareResultPngBtn.addEventListener("click", exportResultPng);
+
+const shareBracketPngBtn = document.getElementById("shareBracketPngBtn");
+if (shareBracketPngBtn) shareBracketPngBtn.addEventListener("click", exportBracketPng);
+
+const swapHomeBtn = document.getElementById("swapHomeBtn");
+if (swapHomeBtn) swapHomeBtn.addEventListener("click", swapHomeAway);
+
 window.addEventListener("resize", drawBracketLines);
 
 setDataset("fc25");
@@ -835,4 +1197,6 @@ renderParticipants();
 renderBracket();
 setupProLinks();
 setupReveal();
-setActiveTab("sorteio");
+setTheme("champions");
+applyPreset("quick");
+setActiveTab("jogadores");

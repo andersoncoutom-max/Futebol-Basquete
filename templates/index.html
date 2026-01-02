@@ -23,7 +23,7 @@
       --accent-2: #18b26b;
       --dark-1: #0b1f2a;
       --dark-2: #0f343d;
-      --shadow: 0 24px 70px rgba(10, 20, 45, 0.18);
+      --shadow: 0 18px 48px rgba(10, 20, 45, 0.14);
       --radius: 22px;
     }
 
@@ -48,7 +48,7 @@
         radial-gradient(circle at 1px 1px, rgba(12, 27, 51, 0.08) 1px, transparent 0),
         radial-gradient(circle at 1px 1px, rgba(12, 27, 51, 0.06) 1px, transparent 0);
       background-size: 32px 32px, 8px 8px;
-      opacity: 0.28;
+      opacity: 0.2;
       pointer-events: none;
       z-index: 0;
     }
@@ -60,6 +60,42 @@
         radial-gradient(900px 520px at 0% -10%, rgba(249, 115, 22, 0.18), transparent 55%),
         radial-gradient(900px 520px at 100% 0%, rgba(239, 68, 68, 0.18), transparent 55%),
         linear-gradient(180deg, #fff7ed, #fff5f5);
+    }
+
+    body.theme-champions {
+      --accent: #2dd4bf;
+      --accent-2: #38bdf8;
+      background:
+        radial-gradient(900px 520px at 0% -10%, rgba(45, 212, 191, 0.18), transparent 55%),
+        radial-gradient(900px 520px at 100% 0%, rgba(56, 189, 248, 0.18), transparent 55%),
+        linear-gradient(180deg, #f0f9ff, #eef2ff);
+    }
+
+    body.theme-libertadores {
+      --accent: #22c55e;
+      --accent-2: #10b981;
+      background:
+        radial-gradient(900px 520px at 0% -10%, rgba(34, 197, 94, 0.2), transparent 55%),
+        radial-gradient(900px 520px at 100% 0%, rgba(16, 185, 129, 0.18), transparent 55%),
+        linear-gradient(180deg, #f0fdf4, #ecfdf5);
+    }
+
+    body.theme-selecoes {
+      --accent: #f59e0b;
+      --accent-2: #f97316;
+      background:
+        radial-gradient(900px 520px at 0% -10%, rgba(245, 158, 11, 0.2), transparent 55%),
+        radial-gradient(900px 520px at 100% 0%, rgba(249, 115, 22, 0.18), transparent 55%),
+        linear-gradient(180deg, #fffbeb, #fff7ed);
+    }
+
+    body.theme-classicos {
+      --accent: #14b8a6;
+      --accent-2: #0ea5e9;
+      background:
+        radial-gradient(900px 520px at 0% -10%, rgba(20, 184, 166, 0.2), transparent 55%),
+        radial-gradient(900px 520px at 100% 0%, rgba(14, 165, 233, 0.18), transparent 55%),
+        linear-gradient(180deg, #ecfeff, #f0f9ff);
     }
 
     .shell {
@@ -74,7 +110,7 @@
       background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.86));
       border: 1px solid rgba(13, 21, 38, 0.08);
       border-radius: var(--radius);
-      box-shadow: 0 24px 70px rgba(10, 20, 45, 0.14);
+      box-shadow: var(--shadow);
       backdrop-filter: blur(12px);
     }
 
@@ -145,7 +181,7 @@
 
     .hero {
       margin-top: 18px;
-      padding: 26px;
+      padding: 20px;
       display: grid;
       gap: 18px;
       background:
@@ -156,8 +192,40 @@
 
     .hero h1 {
       font-family: "Fraunces", serif;
-      font-size: clamp(2rem, 4vw, 2.8rem);
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
       margin-bottom: 8px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .hero-actions .btn {
+      min-width: 160px;
+    }
+
+    .theme-picker {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .theme-pill {
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-weight: 600;
+      border: 1px solid rgba(12, 27, 51, 0.18);
+      background: rgba(255, 255, 255, 0.7);
+      color: var(--ink);
+    }
+
+    .theme-pill.active {
+      background: linear-gradient(135deg, rgba(22, 195, 181, 0.25), rgba(24, 178, 107, 0.25));
+      border-color: rgba(22, 195, 181, 0.55);
     }
 
     .muted { color: var(--muted); }
@@ -249,6 +317,17 @@
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
+    .tab-btn .tab-step {
+      display: inline-grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      margin-right: 8px;
+      background: rgba(255, 255, 255, 0.16);
+      font-size: 0.78rem;
+    }
+
     .tab-btn.active {
       background: linear-gradient(135deg, var(--accent), var(--accent-2));
       border: none;
@@ -281,6 +360,14 @@
       font-size: 0.98rem;
     }
 
+    .count-pill {
+      padding: 6px 12px;
+      background: rgba(22, 195, 181, 0.2);
+      border: 1px solid rgba(22, 195, 181, 0.35);
+      color: #0b1f2a;
+      font-weight: 700;
+    }
+
     .form-label { font-weight: 600; }
 
     .form-control,
@@ -298,9 +385,81 @@
       box-shadow: 0 0 0 0.2rem rgba(14, 165, 233, 0.2);
     }
 
-    .list-group-item {
+    .chip-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--stroke);
       background: rgba(255, 255, 255, 0.9);
-      border-color: var(--stroke);
+      font-weight: 600;
+    }
+
+    .chip-remove {
+      border: none;
+      background: rgba(12, 27, 51, 0.08);
+      color: var(--ink);
+      border-radius: 999px;
+      width: 22px;
+      height: 22px;
+      line-height: 20px;
+      font-weight: 700;
+    }
+
+    .empty-state {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px dashed rgba(12, 27, 51, 0.2);
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    .result-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      margin-top: 14px;
+    }
+
+    .result-card {
+      border-radius: 16px;
+      padding: 12px;
+      border: 1px solid rgba(12, 27, 51, 0.12);
+      background: rgba(255, 255, 255, 0.92);
+      display: grid;
+      gap: 6px;
+      box-shadow: 0 12px 24px rgba(11, 31, 42, 0.08);
+    }
+
+    .result-card .player {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .result-card .team {
+      font-weight: 600;
+    }
+
+    .result-badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge-pill {
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 0.78rem;
+      border: 1px solid rgba(12, 27, 51, 0.12);
+      background: rgba(15, 23, 42, 0.06);
     }
 
     .table thead th { font-weight: 600; }
@@ -391,6 +550,47 @@
       background: rgba(34, 197, 94, 0.18);
     }
 
+    .match-header {
+      font-weight: 700;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: rgba(248, 250, 252, 0.7);
+    }
+
+    .match-vs {
+      text-align: center;
+      font-size: 0.78rem;
+      letter-spacing: 0.2em;
+      color: rgba(248, 250, 252, 0.6);
+    }
+
+    .match-score {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .match-score input {
+      width: 46px;
+      padding: 4px 6px;
+      border-radius: 8px;
+      border: 1px solid rgba(248, 250, 252, 0.2);
+      background: rgba(15, 23, 42, 0.3);
+      color: #f8fafc;
+      text-align: center;
+    }
+
+    .match-score button {
+      border-radius: 10px;
+      border: 1px solid rgba(248, 250, 252, 0.2);
+      background: rgba(15, 23, 42, 0.4);
+      color: #f8fafc;
+      padding: 4px 8px;
+      font-size: 0.78rem;
+    }
+
     .match-meta {
       font-size: 0.78rem;
       color: rgba(248, 250, 252, 0.7);
@@ -438,9 +638,19 @@
 
     <section class="hero glass reveal">
       <div>
-        <div class="text-uppercase small muted">Sorteio inteligente</div>
-        <h1>Distribua times com equilibrio e transparencia</h1>
-        <p class="muted mb-0">Crie sorteios rapidos, gere chaveamento e compartilhe o resultado.</p>
+        <div class="text-uppercase small muted" id="heroKicker">Sorteio de Times para EA FC</div>
+        <h1 id="heroTitle">Defina a lista e sorteie em segundos</h1>
+        <p class="muted mb-0" id="heroSubtitle">Monte a lista, sorteie times equilibrados e gere o chaveamento rapidamente.</p>
+        <div class="hero-actions">
+          <a class="btn btn-accent" href="#step-jogadores">Adicionar jogadores</a>
+          <a class="btn btn-ghost" href="#step-sorteio">Ver sorteio</a>
+        </div>
+        <div class="theme-picker">
+          <button class="theme-pill active" data-theme="champions">Noite de Champions</button>
+          <button class="theme-pill" data-theme="libertadores">Libertadores</button>
+          <button class="theme-pill" data-theme="selecoes">Selecoes</button>
+          <button class="theme-pill" data-theme="classicos">Classicos</button>
+        </div>
       </div>
       <div class="hero-grid">
         <div class="hero-card">
@@ -467,105 +677,145 @@
     </section>
 
     <section class="tabs glass reveal">
-      <button class="tab-btn active" data-tab-target="sorteio">Sorteio</button>
-      <button class="tab-btn" data-tab-target="resultados">Resultados</button>
-      <button class="tab-btn" data-tab-target="chaveamento">Chaveamento</button>
+      <button class="tab-btn active" data-tab-target="jogadores">
+        <span class="tab-step">1</span>Jogadores
+      </button>
+      <button class="tab-btn" data-tab-target="regras">
+        <span class="tab-step">2</span>Regras
+      </button>
+      <button class="tab-btn" data-tab-target="sorteio">
+        <span class="tab-step">3</span>Sorteio
+      </button>
+      <button class="tab-btn" data-tab-target="chaveamento">
+        <span class="tab-step">4</span>Chaveamento
+      </button>
+      <button class="tab-btn" data-tab-target="compartilhar">
+        <span class="tab-step">5</span>Compartilhar
+      </button>
     </section>
 
     <section id="config" class="tab-panels">
-      <div class="tab-panel active" data-tab="sorteio">
-        <div class="layout">
-          <div class="stack">
-            <div class="glass p-3 reveal">
-              <div class="d-flex align-items-center justify-content-between mb-2">
-                <div class="section-title mb-0">Participantes</div>
-                <span class="badge rounded-pill text-bg-light" id="participantCount">0</span>
-              </div>
-              <div class="input-group mb-2">
-                <input id="participantInput" class="form-control" placeholder="Nome do participante" />
-                <button id="addParticipantBtn" class="btn btn-accent pulse">Adicionar</button>
-              </div>
-              <details class="mt-2">
-                <summary class="muted small">Importar lista (um por linha)</summary>
-                <textarea id="bulkInput" class="form-control mt-2" rows="3" placeholder="Anderson&#10;Matheus&#10;Samuel"></textarea>
-                <div class="action-row compact mt-2">
-                  <button id="importBtn" class="btn btn-ghost btn-sm">Importar</button>
-                  <button id="clearParticipantsBtn" class="btn btn-ghost btn-sm">Limpar lista</button>
-                </div>
-              </details>
-              <ul id="participantsList" class="list-group mt-3"></ul>
+      <div class="tab-panel active" data-tab="jogadores" id="step-jogadores">
+        <div class="layout single">
+          <div class="glass p-3 reveal">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div class="section-title mb-0">Jogadores</div>
+              <span class="count-pill rounded-pill" id="participantCount">0</span>
             </div>
-          </div>
-
-          <div class="stack" id="shareCapture">
-            <div class="glass p-3 reveal">
-              <div class="section-title">Configurar sorteio</div>
-              <div class="dataset-tabs mt-2">
-                <button class="dataset-tab active" id="datasetFc25Btn" data-dataset="fc25">Futebol</button>
-                <button class="dataset-tab" id="datasetNbaBtn" data-dataset="nba">Basquete</button>
-              </div>
-              <details class="mt-3">
-                <summary class="muted small">Opcoes avancadas</summary>
-                <div class="row g-2 align-items-end mt-2">
-                  <div class="col-md-6">
-                    <label class="form-label">Pool de times</label>
-                    <select id="modeSelect" class="form-select">
-                      <option value="all">Todos os times</option>
-                      <option value="top">Top N por Overall</option>
-                    </select>
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label">N (se Top)</label>
-                    <input id="topNInput" type="number" class="form-control" value="10" min="1" />
-                  </div>
-                </div>
-                <div class="row g-2 align-items-end mt-2">
-                  <div class="col-md-6">
-                    <label class="form-label">Categoria</label>
-                    <select id="categorySelect" class="form-select"></select>
-                  </div>
-                </div>
-              </details>
-              <div class="action-row mt-3">
-                <button id="drawBtn" class="btn btn-success">Criar sorteio</button>
-              </div>
-              <div id="errorBox" class="alert alert-danger mt-3 d-none"></div>
+            <label class="form-label" for="participantInput">Adicionar jogador</label>
+            <div class="input-group mb-2">
+              <input id="participantInput" class="form-control" placeholder="Ex.: Anderson" />
+              <button id="addParticipantBtn" class="btn btn-accent pulse">Adicionar</button>
             </div>
+            <details class="mt-2">
+              <summary class="muted small">Colar lista (1 por linha)</summary>
+              <textarea id="bulkInput" class="form-control mt-2" rows="3" placeholder="Anderson&#10;Joao&#10;Maria"></textarea>
+              <div class="action-row compact mt-2">
+                <button id="importBtn" class="btn btn-ghost btn-sm">Adicionar lista</button>
+                <button id="pasteBtn" class="btn btn-ghost btn-sm">Colar do clipboard</button>
+                <button id="undoBtn" class="btn btn-ghost btn-sm">Desfazer ultimo</button>
+                <button id="sortParticipantsBtn" class="btn btn-ghost btn-sm">Ordenar A-Z</button>
+                <button id="clearParticipantsBtn" class="btn btn-ghost btn-sm">Limpar tudo</button>
+                <button id="newSeasonBtn" class="btn btn-ghost btn-sm">Nova temporada</button>
+              </div>
+            </details>
+            <div id="participantsList" class="chip-list"></div>
           </div>
         </div>
       </div>
 
-      <div class="tab-panel" data-tab="resultados">
+      <div class="tab-panel" data-tab="regras" id="step-regras">
+        <div class="layout single">
+          <div class="glass p-3 reveal" id="shareCapture">
+            <div class="section-title">Regras do sorteio</div>
+            <div class="dataset-tabs mt-2">
+              <button class="dataset-tab active" id="datasetFc25Btn" data-dataset="fc25">Futebol</button>
+              <button class="dataset-tab" id="datasetNbaBtn" data-dataset="nba">Basquete</button>
+            </div>
+            <div class="row g-2 align-items-end mt-3">
+              <div class="col-md-6">
+                <label class="form-label">Preset rapido</label>
+                <select id="presetSelect" class="form-select">
+                  <option value="quick">Sorteio rapido</option>
+                  <option value="campeonato">Campeonato completo</option>
+                  <option value="selecoes">Modo selecoes</option>
+                  <option value="classicos">Classicos balanceados</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Balanceamento</label>
+                <select id="balanceSelect" class="form-select">
+                  <option value="random">Aleatorio</option>
+                  <option value="tiers">Por tiers (A/B/C/D)</option>
+                </select>
+              </div>
+            </div>
+            <div class="row g-2 align-items-end mt-2">
+              <div class="col-md-6">
+                <div class="form-check mt-4">
+                  <input class="form-check-input" type="checkbox" id="avoidRepeatToggle">
+                  <label class="form-check-label" for="avoidRepeatToggle">Evitar repetir time do ultimo sorteio</label>
+                </div>
+                <div class="form-check mt-2">
+                  <input class="form-check-input" type="checkbox" id="avoidRepeat3Toggle">
+                  <label class="form-check-label" for="avoidRepeat3Toggle">Evitar repetir nas ultimas 3 rodadas</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Seed (transparencia)</label>
+                <div class="input-group">
+                  <input id="seedInput" class="form-control" placeholder="Ex.: 9F3A" />
+                  <button id="seedBtn" class="btn btn-ghost" type="button">Gerar</button>
+                </div>
+              </div>
+            </div>
+            <details class="mt-3">
+              <summary class="muted small">Opcoes avancadas</summary>
+              <div class="row g-2 align-items-end mt-2">
+                <div class="col-md-6">
+                  <label class="form-label">Conjunto de times</label>
+                  <select id="modeSelect" class="form-select">
+                    <option value="all">Todos os times</option>
+                    <option value="top">Top N por overall</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Top N por overall (opcional)</label>
+                  <input id="topNInput" type="number" class="form-control" value="10" min="1" />
+                </div>
+              </div>
+              <div class="row g-2 align-items-end mt-2">
+                <div class="col-md-6">
+                  <label class="form-label">Liga / Selecoes</label>
+                  <select id="categorySelect" class="form-select"></select>
+                </div>
+              </div>
+            </details>
+            <div class="action-row mt-3">
+              <button id="drawBtn" class="btn btn-success">Sortear times</button>
+            </div>
+            <div id="errorBox" class="alert alert-danger mt-3 d-none"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-tab="sorteio" id="step-sorteio">
         <div class="layout single">
           <div class="glass p-3 reveal">
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-              <div class="section-title mb-0">Resultado</div>
+              <div class="section-title mb-0">Sorteio</div>
               <div class="action-row compact">
-                <button id="copyBtn" class="btn btn-ghost btn-sm" disabled>Copiar</button>
-                <button id="shareBtn" class="btn btn-ghost btn-sm" disabled>Compartilhar</button>
+                <button id="copyBtn" class="btn btn-ghost btn-sm" disabled>Copiar resultado</button>
+                <button id="shareBtn" class="btn btn-ghost btn-sm" disabled>Copiar para WhatsApp</button>
               </div>
             </div>
-            <div class="table-responsive mt-3">
-              <table class="table table-striped align-middle">
-                <thead>
-                  <tr>
-                    <th>Participante</th>
-                    <th>Time</th>
-                    <th>Categoria</th>
-                    <th>OVR</th>
-                    <th>ATT</th>
-                    <th>MID</th>
-                    <th>DEF</th>
-                  </tr>
-                </thead>
-                <tbody id="resultTbody"></tbody>
-              </table>
-            </div>
+            <div id="resultMeta" class="muted small mt-2"></div>
+            <div id="resultCards" class="result-grid"></div>
           </div>
         </div>
       </div>
 
-      <div class="tab-panel" data-tab="chaveamento">
+      <div class="tab-panel" data-tab="chaveamento" id="step-chaveamento">
         <div class="layout single">
           <div class="glass p-3 reveal">
             <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-2">
@@ -573,6 +823,7 @@
               <div class="action-row compact">
                 <button id="bracketBtn" class="btn btn-ghost btn-sm" disabled>Gerar chaveamento</button>
                 <button id="rrBtn" class="btn btn-ghost btn-sm" disabled>Todos contra todos</button>
+                <button id="swapHomeBtn" class="btn btn-ghost btn-sm" disabled>Inverter mandos</button>
               </div>
             </div>
             <div class="d-flex align-items-center gap-2 mb-2">
@@ -602,6 +853,20 @@
                 </thead>
                 <tbody id="rrTbody"></tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-tab="compartilhar" id="step-compartilhar">
+        <div class="layout single">
+          <div class="glass p-3 reveal">
+            <div class="section-title">Compartilhar</div>
+            <p class="muted mb-3">Envie o resultado e o chaveamento com um clique.</p>
+            <div class="action-row">
+              <button id="shareTextBtn" class="btn btn-ghost" disabled>Copiar texto (WhatsApp)</button>
+              <button id="shareResultPngBtn" class="btn btn-ghost" disabled>PNG do sorteio</button>
+              <button id="shareBracketPngBtn" class="btn btn-ghost" disabled>PNG do chaveamento</button>
             </div>
           </div>
         </div>

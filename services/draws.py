@@ -88,6 +88,30 @@ def draw_assignments(participants: List[str], pool: List[Dict[str, Any]]) -> Lis
     return result
 
 
+def balance_pool_by_tiers(pool: List[Dict[str, Any]], tiers: int = 4) -> List[Dict[str, Any]]:
+    if not pool or tiers < 2:
+        return pool
+
+    size = max(1, len(pool) // tiers)
+    buckets = []
+    for i in range(tiers):
+        start = i * size
+        end = (i + 1) * size if i < tiers - 1 else len(pool)
+        bucket = pool[start:end]
+        random.shuffle(bucket)
+        buckets.append(bucket)
+
+    balanced = []
+    idx = 0
+    while any(buckets):
+        bucket = buckets[idx % tiers]
+        if bucket:
+            balanced.append(bucket.pop(0))
+        idx += 1
+
+    return balanced
+
+
 def make_bracket(draw_rows: List[Dict[str, Any]]) -> Dict[str, Any]:
     entries = draw_rows[:]
     random.shuffle(entries)
