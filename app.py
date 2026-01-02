@@ -19,7 +19,7 @@ from flask import (
     url_for,
 )
 from flask_socketio import SocketIO, emit, join_room
-from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.security import generate_password_hash
 
 from services.datasets import compute_stats, list_datasets, load_rows
 from services.draws import apply_filters, draw_assignments, make_bracket, make_round_robin
@@ -206,6 +206,16 @@ def load_share(code: str) -> Optional[Dict[str, Any]]:
         con.close()
 
 
+def ensure_guest_session() -> None:
+    if session.get("user_id"):
+        return
+    guest_email = f"guest-{secrets.token_hex(4)}@local"
+    guest_user = create_user(guest_email, secrets.token_hex(16))
+    session["user_id"] = guest_user["id"]
+    session["user_email"] = "Convidado"
+    session["is_pro"] = False
+
+
 def get_tournament_by_code(code: str) -> Optional[Dict[str, Any]]:
     con = sqlite3.connect(DB_PATH)
     try:
@@ -298,9 +308,7 @@ def login_required(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
         if not session.get("user_id"):
-            if request.path.startswith("/api/"):
-                return jsonify({"error": "unauthorized"}), 401
-            return redirect(url_for("login", next=request.path))
+            ensure_guest_session()
         return fn(*args, **kwargs)
 
     return wrapper
@@ -309,51 +317,39 @@ def login_required(fn):
 init_db()
 
 
+@app.before_request
+def auto_login_guest():
+    if request.path.startswith("/static/"):
+        return
+    if request.endpoint in {"login", "login_post", "register", "register_post"}:
+        return
+    ensure_guest_session()
+
+
 @app.get("/login")
 def login():
-    return render_template("login.html")
+    return redirect(url_for("index"))
 
 
 @app.post("/login")
 def login_post():
-    email = (request.form.get("email") or "").strip().lower()
-    password = request.form.get("password") or ""
-    user = get_user_by_email(email)
-    if not user or not check_password_hash(user["password_hash"], password):
-        return render_template("login.html", error="Credenciais invalidas."), 400
-    session["user_id"] = user["id"]
-    session["user_email"] = user["email"]
-    session["is_pro"] = bool(user["is_pro"])
     return redirect(url_for("index"))
 
 
 @app.get("/register")
 def register():
-    return render_template("register.html")
+    return redirect(url_for("index"))
 
 
 @app.post("/register")
 def register_post():
-    email = (request.form.get("email") or "").strip().lower()
-    password = request.form.get("password") or ""
-    password2 = request.form.get("password2") or ""
-    if not email or not password:
-        return render_template("register.html", error="Preencha email e senha."), 400
-    if password != password2:
-        return render_template("register.html", error="Senhas nao conferem."), 400
-    if get_user_by_email(email):
-        return render_template("register.html", error="Email ja cadastrado."), 400
-    user = create_user(email, password)
-    session["user_id"] = user["id"]
-    session["user_email"] = user["email"]
-    session["is_pro"] = False
     return redirect(url_for("index"))
 
 
 @app.get("/logout")
 def logout():
     session.clear()
-    return redirect(url_for("login"))
+    return redirect(url_for("index"))
 
 
 @app.get("/api/me")
