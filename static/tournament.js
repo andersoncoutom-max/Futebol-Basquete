@@ -28,7 +28,13 @@
   const startBtn = el("startBtn");
   const startMode = el("startMode");
 
-  const socket = io();
+  const socket = io({
+    transports: ["polling"],
+    upgrade: false,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    timeout: 20000,
+  });
 
   const modeLabel = (mode) => (mode === "round_robin" ? "Todos contra todos" : "Mata-mata");
   const datasetLabel = (dataset) => (dataset === "nba" ? "NBA 2K25" : "FC 25");
@@ -77,9 +83,21 @@
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      throw new Error(data.error || "Erro na requisicao");
+      const err = new Error(data.error || "Erro na requisicao");
+      err.status = res.status;
+      throw err;
     }
     return data;
+  };
+
+  const resetSessionState = (msg) => {
+    localStorage.removeItem("tournamentCode");
+    state.code = null;
+    state.tournament = null;
+    state.players = [];
+    state.matches = [];
+    showError(msg);
+    updatePanel();
   };
 
   const updatePanel = () => {
@@ -175,16 +193,25 @@
 
   const loadTournament = async (code) => {
     clearError();
-    const data = await api(`/api/tournaments/${code}`);
-    state.code = data.tournament.code;
-    state.tournament = data.tournament;
-    state.players = data.players || [];
-    state.matches = data.matches || [];
-    state.isAdmin = !!data.is_admin;
-    state.viewerName = data.viewer_display_name || null;
-    localStorage.setItem("tournamentCode", state.code);
-    socket.emit("join_tournament", { code: state.code });
-    updatePanel();
+    try {
+      const data = await api(`/api/tournaments/${code}`);
+      state.code = data.tournament.code;
+      state.tournament = data.tournament;
+      state.players = data.players || [];
+      state.matches = data.matches || [];
+      state.isAdmin = !!data.is_admin;
+      state.viewerName = data.viewer_display_name || null;
+      localStorage.setItem("tournamentCode", state.code);
+      socket.emit("join_tournament", { code: state.code });
+      updatePanel();
+    } catch (err) {
+      const msg = err.message || "Erro ao carregar sala.";
+      if (err.status === 404 || /Torneio nao encontrado/i.test(msg)) {
+        resetSessionState("Codigo invalido ou expirado.");
+        return;
+      }
+      throw err;
+    }
   };
 
   const confirmMatch = async (matchId, winner) => {
@@ -288,7 +315,7 @@
 
   const saved = localStorage.getItem("tournamentCode");
   if (saved) {
-    loadTournament(saved).catch(() => {});
+    loadTournament(saved).catch((err) => showError(err.message || "Erro ao carregar sala."));
   }
 
   updatePanel();
