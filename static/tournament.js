@@ -5,6 +5,8 @@
     tournament: null,
     players: [],
     matches: [],
+    isAdmin: false,
+    viewerName: null,
   };
 
   const createName = el("createName");
@@ -20,6 +22,7 @@
   const playersList = el("playersList");
   const matchesList = el("matchesList");
   const errorBox = el("errorBox");
+  const inviteCode = el("inviteCode");
   const entryError = el("entryError");
   const copyCodeBtn = el("copyCodeBtn");
   const startBtn = el("startBtn");
@@ -87,15 +90,20 @@
       matchesList.innerHTML = "";
       copyCodeBtn.disabled = true;
       startBtn.disabled = true;
+      startMode.disabled = true;
+      if (inviteCode) inviteCode.textContent = "-";
       return;
     }
 
     const tournament = state.tournament;
     tournamentName.textContent = tournament.name;
-    tournamentMeta.textContent = `Codigo ${tournament.code} | Jogo ${datasetLabel(tournament.dataset)} | Modo ${modeLabel(tournament.mode)} | Jogadores ${state.players.length}`;
+    const viewer = state.viewerName ? ` | Voce: ${state.viewerName}` : "";
+    tournamentMeta.textContent = `Codigo ${tournament.code} | Jogo ${datasetLabel(tournament.dataset)} | Modo ${modeLabel(tournament.mode)} | Jogadores ${state.players.length}${viewer}`;
     startMode.value = tournament.mode || "bracket";
     copyCodeBtn.disabled = false;
-    startBtn.disabled = false;
+    startBtn.disabled = !state.isAdmin;
+    startMode.disabled = !state.isAdmin;
+    if (inviteCode) inviteCode.textContent = tournament.code;
 
     playersList.innerHTML = "";
     state.players.forEach((player) => {
@@ -172,6 +180,8 @@
     state.tournament = data.tournament;
     state.players = data.players || [];
     state.matches = data.matches || [];
+    state.isAdmin = !!data.is_admin;
+    state.viewerName = data.viewer_display_name || null;
     localStorage.setItem("tournamentCode", state.code);
     socket.emit("join_tournament", { code: state.code });
     updatePanel();

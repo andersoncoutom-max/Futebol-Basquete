@@ -254,6 +254,19 @@ def list_tournament_players(tournament_id: int) -> list[Dict[str, Any]]:
         con.close()
 
 
+def is_user_in_tournament(tournament_id: int, user_id: int) -> bool:
+    con = sqlite3.connect(DB_PATH)
+    try:
+        cur = con.cursor()
+        cur.execute(
+            "SELECT 1 FROM tournament_players WHERE tournament_id = ? AND user_id = ?",
+            (tournament_id, user_id),
+        )
+        return cur.fetchone() is not None
+    finally:
+        con.close()
+
+
 def get_player_name(tournament_id: int, user_id: int) -> Optional[str]:
     con = sqlite3.connect(DB_PATH)
     try:
@@ -710,20 +723,36 @@ def api_tournament_join():
     tournament = get_tournament_by_code(code)
     if not tournament:
         return jsonify({"error": "Torneio nao encontrado."}), 404
-    if tournament["owner_user_id"] != session.get("user_id"):
-        return jsonify({"error": "Apenas o admin pode iniciar."}), 403
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Usuario nao autenticado."}), 401
 
     con = sqlite3.connect(DB_PATH)
     try:
         cur = con.cursor()
         cur.execute(
-            "SELECT id FROM tournament_players WHERE tournament_id = ? AND user_id = ?",
-            (tournament["id"], session["user_id"]),
+            "SELECT user_id FROM tournament_players WHERE tournament_id = ? AND display_name = ?",
+            (tournament["id"], display_name),
         )
-        if not cur.fetchone():
+        row = cur.fetchone()
+        if row and row[0] != user_id:
+            return jsonify({"error": "Esse apelido ja esta em uso nesse torneio."}), 400
+
+        cur.execute(
+            "SELECT id FROM tournament_players WHERE tournament_id = ? AND user_id = ?",
+            (tournament["id"], user_id),
+        )
+        existing = cur.fetchone()
+        if not existing:
             cur.execute(
                 "INSERT INTO tournament_players (tournament_id, user_id, display_name, created_at) VALUES (?, ?, ?, ?)",
-                (tournament["id"], session["user_id"], display_name, _now_iso()),
+                (tournament["id"], user_id, display_name, _now_iso()),
+            )
+            con.commit()
+        else:
+            cur.execute(
+                "UPDATE tournament_players SET display_name = ? WHERE tournament_id = ? AND user_id = ?",
+                (display_name, tournament["id"], user_id),
             )
             con.commit()
     finally:
@@ -740,11 +769,22 @@ def api_tournament_get(code: str):
     tournament = get_tournament_by_code(code)
     if not tournament:
         return jsonify({"error": "Torneio nao encontrado."}), 404
-    if tournament["owner_user_id"] != session.get("user_id"):
-        return jsonify({"error": "Apenas o admin pode iniciar."}), 403
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Usuario nao autenticado."}), 401
+    if tournament["owner_user_id"] != user_id and not is_user_in_tournament(tournament["id"], user_id):
+        return jsonify({"error": "Sem permissao para acessar este torneio."}), 403
     players = list_tournament_players(tournament["id"])
     matches = list_tournament_matches(tournament["id"])
-    return jsonify({"tournament": tournament, "players": players, "matches": matches})
+    return jsonify(
+        {
+            "tournament": tournament,
+            "players": players,
+            "matches": matches,
+            "is_admin": tournament["owner_user_id"] == user_id,
+            "viewer_display_name": get_player_name(tournament["id"], user_id),
+        }
+    )
 
 
 @app.post("/api/tournaments/<code>/start")
@@ -845,8 +885,6 @@ def api_tournament_confirm(code: str):
     tournament = get_tournament_by_code(code)
     if not tournament:
         return jsonify({"error": "Torneio nao encontrado."}), 404
-    if tournament["owner_user_id"] != session.get("user_id"):
-        return jsonify({"error": "Apenas o admin pode iniciar."}), 403
 
     player_name = get_player_name(tournament["id"], session["user_id"])
     is_admin = tournament["owner_user_id"] == session.get("user_id")
