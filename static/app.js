@@ -13,6 +13,27 @@ const bracketState = {
   pendingByes: []
 };
 
+const tabButtons = document.querySelectorAll("[data-tab-target]");
+const tabPanels = document.querySelectorAll(".tab-panel");
+
+function setActiveTab(tabId) {
+  if (!tabButtons.length || !tabPanels.length) return;
+  tabButtons.forEach((btn) => {
+    const target = btn.getAttribute("data-tab-target");
+    btn.classList.toggle("active", target === tabId);
+  });
+  tabPanels.forEach((panel) => {
+    panel.classList.toggle("active", panel.getAttribute("data-tab") === tabId);
+  });
+}
+
+tabButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const target = btn.getAttribute("data-tab-target");
+    if (target) setActiveTab(target);
+  });
+});
+
 function normalizeName(name) {
   return String(name || "").trim();
 }
@@ -431,6 +452,9 @@ function updateStatsLabels(stats) {
   const labelWomen = document.getElementById("labelWomen");
   const labelNational = document.getElementById("labelNational");
 
+  if (!infoTotal || !infoClubs || !infoWomen || !infoNational) return;
+  if (!labelTotal || !labelClubs || !labelWomen || !labelNational) return;
+
   if (datasetState.current === "nba") {
     infoTotal.textContent = formatCount(stats.total_teams);
     infoClubs.textContent = formatCount(stats.counts?.clubs);
@@ -767,6 +791,7 @@ if (drawBtn) {
       });
 
       buildBracket(j.draw);
+      setActiveTab("resultados");
 
     } catch (e) {
       showError("Falha de comunicacao com o servidor.");
@@ -776,11 +801,17 @@ if (drawBtn) {
 
 const bracketBtn = document.getElementById("bracketBtn");
 if (bracketBtn) bracketBtn.addEventListener("click", () => {
-  if (lastDraw) buildBracket(lastDraw.draw || []);
+  if (lastDraw) {
+    buildBracket(lastDraw.draw || []);
+    setActiveTab("chaveamento");
+  }
 });
 
 const rrBtn = document.getElementById("rrBtn");
-if (rrBtn) rrBtn.addEventListener("click", runRoundRobin);
+if (rrBtn) rrBtn.addEventListener("click", () => {
+  runRoundRobin();
+  setActiveTab("chaveamento");
+});
 
 const copyBtn = document.getElementById("copyBtn");
 if (copyBtn) copyBtn.addEventListener("click", copyResult);
@@ -804,3 +835,4 @@ renderParticipants();
 renderBracket();
 setupProLinks();
 setupReveal();
+setActiveTab("sorteio");

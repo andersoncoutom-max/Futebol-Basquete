@@ -32,8 +32,8 @@
       font-family: "Sora", system-ui, -apple-system, "Segoe UI", sans-serif;
       color: var(--ink);
       background:
-        radial-gradient(900px 520px at 0% -10%, rgba(14, 165, 233, 0.18), transparent 55%),
-        radial-gradient(900px 520px at 100% 0%, rgba(34, 197, 94, 0.18), transparent 55%),
+        radial-gradient(900px 520px at 0% -10%, rgba(14, 165, 233, 0.16), transparent 55%),
+        radial-gradient(900px 520px at 100% 0%, rgba(34, 197, 94, 0.16), transparent 55%),
         linear-gradient(180deg, var(--bg), var(--bg-2));
       min-height: 100vh;
     }
@@ -145,45 +145,7 @@
       margin-bottom: 8px;
     }
 
-    .hero-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-
     .muted { color: var(--muted); }
-
-    .stats-inline { display: none; }
-
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 10px;
-      min-width: 280px;
-    }
-
-    .kpi {
-      border-radius: 16px;
-      padding: 10px 12px;
-      background: rgba(255, 255, 255, 0.72);
-      border: 1px solid rgba(13, 21, 38, 0.12);
-      display: grid;
-      gap: 2px;
-    }
-
-    .kpi-value {
-      font-weight: 700;
-      font-size: 1.05rem;
-    }
-
-    .kpi-label {
-      font-size: 0.72rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--muted);
-    }
 
     .dataset-tabs {
       display: inline-flex;
@@ -209,12 +171,48 @@
       border: 1px solid rgba(14, 165, 233, 0.6);
     }
 
+    .tabs {
+      margin-top: 18px;
+      padding: 8px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .tab-btn {
+      border: 1px solid rgba(13, 21, 38, 0.16);
+      background: rgba(255, 255, 255, 0.7);
+      color: var(--ink);
+      font-weight: 700;
+      padding: 8px 14px;
+      border-radius: 999px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, var(--accent), #bbf7d0);
+      border: none;
+      box-shadow: 0 12px 30px rgba(34, 197, 94, 0.25);
+    }
+
+    .tab-panels {
+      margin-top: 16px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .tab-panel { display: none; }
+
+    .tab-panel.active { display: block; }
+
     .layout {
-      margin-top: 20px;
       display: grid;
       gap: 16px;
       grid-template-columns: 0.9fr 1.1fr;
     }
+
+    .layout.single { grid-template-columns: 1fr; }
 
     .stack { display: grid; gap: 14px; }
 
@@ -255,9 +253,16 @@
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
+      align-items: center;
     }
 
-    .action-row .btn { min-width: 120px; }
+    .action-row .btn { min-width: 140px; }
+
+    .action-row.compact .btn {
+      min-width: auto;
+      padding: 6px 12px;
+      font-size: 0.86rem;
+    }
 
     .alert-danger {
       background: rgba(255, 71, 87, 0.12);
@@ -331,34 +336,6 @@
       color: rgba(248, 250, 252, 0.7);
     }
 
-    .pro-strip {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 16px 18px;
-      background: linear-gradient(135deg, rgba(14, 165, 233, 0.16), rgba(34, 197, 94, 0.16));
-    }
-
-    .pro-price {
-      font-weight: 700;
-      font-size: 1.1rem;
-    }
-
-    .live-pill {
-      align-self: start;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 12px;
-      border-radius: 999px;
-      border: 1px solid rgba(14, 165, 233, 0.4);
-      background: rgba(14, 165, 233, 0.12);
-      color: #0b1320;
-      font-size: 0.82rem;
-      font-weight: 600;
-    }
-
     .reveal {
       opacity: 0;
       transform: translateY(16px);
@@ -373,8 +350,6 @@
     @media (max-width: 992px) {
       .layout { grid-template-columns: 1fr; }
       .topbar { flex-direction: column; align-items: flex-start; }
-      .hero-row { align-items: flex-start; }
-      .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
   </style>
 </head>
@@ -385,180 +360,174 @@
         <div class="brand-logo">SP</div>
         <div>
           <div class="brand-title">Sorteio Pro</div>
-          <div class="brand-sub">Sorteios premium para partidas casuais</div>
+          <div class="brand-sub">Sorteios e torneios em minutos</div>
         </div>
       </div>
       <div class="topbar-actions">
-        <a class="btn btn-ghost btn-sm" href="/tournament">Torneio online</a>
-        <a class="btn btn-ghost btn-sm" href="/logout">Sair</a>
-        <a class="btn btn-accent btn-sm" href="#config">Criar sorteio</a>
+        <a class="btn btn-ghost btn-sm" href="/tournament">Salas online</a>
       </div>
     </header>
 
     <section class="hero glass reveal">
       <div>
         <div class="text-uppercase small muted">Sorteio inteligente</div>
-        <h1>Sorteio de Times</h1>
-        <p class="muted mb-0">Crie partidas equilibradas, gere mata-mata e compartilhe o resultado em segundos.</p>
+        <h1>Distribua times com equilibrio e transparencia</h1>
+        <p class="muted mb-0">Crie sorteios rapidos, gere chaveamento e compartilhe o resultado.</p>
       </div>
-      <div class="hero-row">
-        <div class="dataset-tabs">
-          <button class="dataset-tab active" id="datasetFc25Btn" data-dataset="fc25">Futebol</button>
-          <button class="dataset-tab" id="datasetNbaBtn" data-dataset="nba">Basquete</button>
-        </div>
-        <div class="kpi-grid">
-          <div class="kpi">
-            <div class="kpi-value" id="infoTotal">--</div>
-            <div class="kpi-label" id="labelTotal">Times</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-value" id="infoClubs">--</div>
-            <div class="kpi-label" id="labelClubs">Clubes</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-value" id="infoWomen">--</div>
-            <div class="kpi-label" id="labelWomen">Feminino</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-value" id="infoNational">--</div>
-            <div class="kpi-label" id="labelNational">Selecoes</div>
-          </div>
-        </div>
-      </div>
-      <div class="live-pill">Ao vivo: clique no vencedor</div>
     </section>
 
-    <section id="config" class="layout">
-      <div class="stack">
-        <div class="glass p-3 reveal">
-          <div class="d-flex align-items-center justify-content-between mb-2">
-            <div class="section-title mb-0">Participantes</div>
-            <span class="kpi" style="padding: 6px 10px;">
-              <span class="kpi-value" id="participantCount">0</span>
-              <span class="kpi-label">Jogadores</span>
-            </span>
-          </div>
-          <div class="input-group mb-2">
-            <input id="participantInput" class="form-control" placeholder="Nome do participante" />
-            <button id="addParticipantBtn" class="btn btn-accent">Adicionar</button>
-          </div>
-          <label class="form-label">Importar lista (um por linha)</label>
-          <textarea id="bulkInput" class="form-control" rows="3" placeholder="Anderson&#10;Matheus&#10;Samuel"></textarea>
-          <div class="action-row mt-2">
-            <button id="importBtn" class="btn btn-ghost btn-sm">Importar</button>
-            <button id="clearParticipantsBtn" class="btn btn-outline-light btn-sm">Limpar lista</button>
-          </div>
-          <ul id="participantsList" class="list-group mt-3"></ul>
-        </div>
+    <section class="tabs glass reveal">
+      <button class="tab-btn active" data-tab-target="sorteio">Sorteio</button>
+      <button class="tab-btn" data-tab-target="resultados">Resultados</button>
+      <button class="tab-btn" data-tab-target="chaveamento">Chaveamento</button>
+      <button class="tab-btn" data-tab-target="exportar">Exportar</button>
+    </section>
 
-        <div class="glass p-3 reveal">
-          <div class="section-title">Plano Pro</div>
-          <div class="muted mb-2">Desbloqueie exportacoes ilimitadas, historico e modos online.</div>
-          <a class="btn btn-ghost btn-sm js-pro-link" data-whatsapp="" href="#">Assinar</a>
+    <section id="config" class="tab-panels">
+      <div class="tab-panel active" data-tab="sorteio">
+        <div class="layout">
+          <div class="stack">
+            <div class="glass p-3 reveal">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="section-title mb-0">Participantes</div>
+                <span class="badge rounded-pill text-bg-light" id="participantCount">0</span>
+              </div>
+              <div class="input-group mb-2">
+                <input id="participantInput" class="form-control" placeholder="Nome do participante" />
+                <button id="addParticipantBtn" class="btn btn-accent">Adicionar</button>
+              </div>
+              <details class="mt-2">
+                <summary class="muted small">Importar lista (um por linha)</summary>
+                <textarea id="bulkInput" class="form-control mt-2" rows="3" placeholder="Anderson&#10;Matheus&#10;Samuel"></textarea>
+                <div class="action-row compact mt-2">
+                  <button id="importBtn" class="btn btn-ghost btn-sm">Importar</button>
+                  <button id="clearParticipantsBtn" class="btn btn-ghost btn-sm">Limpar lista</button>
+                </div>
+              </details>
+              <ul id="participantsList" class="list-group mt-3"></ul>
+            </div>
+          </div>
+
+          <div class="stack" id="shareCapture">
+            <div class="glass p-3 reveal">
+              <div class="section-title">Configurar sorteio</div>
+              <div class="dataset-tabs mt-2">
+                <button class="dataset-tab active" id="datasetFc25Btn" data-dataset="fc25">Futebol</button>
+                <button class="dataset-tab" id="datasetNbaBtn" data-dataset="nba">Basquete</button>
+              </div>
+              <div class="row g-2 align-items-end mt-3">
+                <div class="col-md-6">
+                  <label class="form-label">Pool de times</label>
+                  <select id="modeSelect" class="form-select">
+                    <option value="all">Todos os times</option>
+                    <option value="top">Top N por Overall</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">N (se Top)</label>
+                  <input id="topNInput" type="number" class="form-control" value="10" min="1" />
+                </div>
+              </div>
+              <div class="row g-2 align-items-end mt-2">
+                <div class="col-md-6">
+                  <label class="form-label">Categoria</label>
+                  <select id="categorySelect" class="form-select"></select>
+                </div>
+              </div>
+              <div class="action-row mt-3">
+                <button id="drawBtn" class="btn btn-success">Criar sorteio</button>
+              </div>
+              <div id="errorBox" class="alert alert-danger mt-3 d-none"></div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="stack" id="shareCapture">
-        <div class="glass p-3 reveal">
-          <div class="section-title">Configurar sorteio</div>
-          <div class="row g-2 align-items-end">
-            <div class="col-md-6">
-              <label class="form-label">Pool de times</label>
-              <select id="modeSelect" class="form-select">
-                <option value="all">Todos os times</option>
-                <option value="top">Top N por Overall</option>
-              </select>
+      <div class="tab-panel" data-tab="resultados">
+        <div class="layout single">
+          <div class="glass p-3 reveal">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+              <div class="section-title mb-0">Resultado</div>
+              <div class="action-row compact">
+                <button id="copyBtn" class="btn btn-ghost btn-sm" disabled>Copiar</button>
+                <button id="shareBtn" class="btn btn-ghost btn-sm" disabled>Compartilhar</button>
+              </div>
             </div>
-            <div class="col-md-6">
-              <label class="form-label">N (se Top)</label>
-              <input id="topNInput" type="number" class="form-control" value="10" min="1" />
+            <div class="table-responsive mt-3">
+              <table class="table table-striped align-middle">
+                <thead>
+                  <tr>
+                    <th>Participante</th>
+                    <th>Time</th>
+                    <th>Categoria</th>
+                    <th>OVR</th>
+                    <th>ATT</th>
+                    <th>MID</th>
+                    <th>DEF</th>
+                  </tr>
+                </thead>
+                <tbody id="resultTbody"></tbody>
+              </table>
             </div>
-          </div>
-          <div class="row g-2 align-items-end mt-2">
-            <div class="col-md-6">
-              <label class="form-label">Categoria</label>
-              <select id="categorySelect" class="form-select"></select>
-            </div>
-            <div class="col-md-6 d-flex align-items-center">
-              <span id="teamsInfo" class="muted small"></span>
-            </div>
-          </div>
-          <div class="action-row mt-3">
-            <button id="drawBtn" class="btn btn-success">Criar sorteio</button>
-            <button id="bracketBtn" class="btn btn-ghost" disabled>Chaveamento</button>
-            <button id="rrBtn" class="btn btn-ghost" disabled>Todos contra todos</button>
-            <button id="copyBtn" class="btn btn-ghost" disabled>Copiar</button>
-            <button id="csvBtn" class="btn btn-ghost" disabled>CSV</button>
-            <button id="pngBtn" class="btn btn-ghost" disabled>PNG</button>
-            <button id="exportBtn" class="btn btn-ghost" disabled>XLSX</button>
-            <button id="shareBtn" class="btn btn-ghost" disabled>Compartilhar</button>
-          </div>
-          <div id="errorBox" class="alert alert-danger mt-3 d-none"></div>
-        </div>
-
-        <div class="glass p-3 reveal">
-          <div class="section-title">Resultado</div>
-          <div class="table-responsive">
-            <table class="table table-striped align-middle">
-              <thead>
-                <tr>
-                  <th>Participante</th>
-                  <th>Time</th>
-                  <th>Categoria</th>
-                  <th>OVR</th>
-                  <th>ATT</th>
-                  <th>MID</th>
-                  <th>DEF</th>
-                </tr>
-              </thead>
-              <tbody id="resultTbody"></tbody>
-            </table>
           </div>
         </div>
+      </div>
 
-        <div class="glass p-3 reveal">
-          <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-2">
-            <div class="section-title mb-0">Chaveamento</div>
-            <div class="d-flex align-items-center gap-2">
+      <div class="tab-panel" data-tab="chaveamento">
+        <div class="layout single">
+          <div class="glass p-3 reveal">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-2">
+              <div class="section-title mb-0">Chaveamento</div>
+              <div class="action-row compact">
+                <button id="bracketBtn" class="btn btn-ghost btn-sm" disabled>Gerar chaveamento</button>
+                <button id="rrBtn" class="btn btn-ghost btn-sm" disabled>Todos contra todos</button>
+              </div>
+            </div>
+            <div class="d-flex align-items-center gap-2 mb-2">
               <span id="bracketStatus" class="muted small"></span>
-              <button id="nextRoundBtn" class="btn btn-outline-light btn-sm d-none">Avancar fase</button>
+              <button id="nextRoundBtn" class="btn btn-ghost btn-sm d-none">Avancar fase</button>
+            </div>
+            <div class="bracket-wrap">
+              <svg class="bracket-lines" id="bracketLines"></svg>
+              <div id="bracketContainer" class="bracket-grid"></div>
             </div>
           </div>
-          <div class="bracket-wrap">
-            <svg class="bracket-lines" id="bracketLines"></svg>
-            <div id="bracketContainer" class="bracket-grid"></div>
-          </div>
-        </div>
 
-        <div class="glass p-3 reveal d-none" id="rrBox">
-          <div class="section-title">Todos contra todos</div>
-          <div class="muted small mb-2" id="rrMeta"></div>
-          <div class="table-responsive">
-            <table class="table table-striped align-middle">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Jogador A</th>
-                  <th>Time A</th>
-                  <th>vs</th>
-                  <th>Jogador B</th>
-                  <th>Time B</th>
-                </tr>
-              </thead>
-              <tbody id="rrTbody"></tbody>
-            </table>
+          <div class="glass p-3 reveal d-none" id="rrBox">
+            <div class="section-title">Todos contra todos</div>
+            <div class="muted small mb-2" id="rrMeta"></div>
+            <div class="table-responsive">
+              <table class="table table-striped align-middle">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Jogador A</th>
+                    <th>Time A</th>
+                    <th>vs</th>
+                    <th>Jogador B</th>
+                    <th>Time B</th>
+                  </tr>
+                </thead>
+                <tbody id="rrTbody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
-    </section>
 
-    <section class="pro-strip glass reveal">
-      <div>
-        <div class="section-title">Sorteio Pro mensal</div>
-        <div class="muted">Exportacoes ilimitadas e recursos premium.</div>
+      <div class="tab-panel" data-tab="exportar">
+        <div class="layout single">
+          <div class="glass p-3 reveal">
+            <div class="section-title">Exportar resultados</div>
+            <p class="muted mb-3">Gere arquivos para compartilhar fora do app.</p>
+            <div class="action-row">
+              <button id="csvBtn" class="btn btn-ghost" disabled>CSV</button>
+              <button id="pngBtn" class="btn btn-ghost" disabled>PNG</button>
+              <button id="exportBtn" class="btn btn-ghost" disabled>XLSX</button>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="pro-price">R$ 14,90/m?s</div>
-      <a class="btn btn-accent js-pro-link" data-whatsapp="" href="#">Assinar</a>
     </section>
   </div>
 
