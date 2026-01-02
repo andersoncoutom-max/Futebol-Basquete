@@ -1,0 +1,76 @@
+[33mcommit 91d2da821bf91929d27a5348034f2fb8f31bb9b9[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: Anderson <anderson.coutom@gmail.com>
+Date:   Thu Jan 1 21:50:07 2026 -0300
+
+    Atualiza UI e salas online
+
+ .gitignore                                         |  10 [32m+[m
+ Procfile                                           |   1 [32m+[m
+ app-release-signed.apk.idsig                       | Bin [31m0[m -> [32m13800[m bytes
+ app.py                                             | 952 [32m+++++++++++++++++++++[m
+ app/build.gradle                                   | 213 [32m+++++[m
+ app/src/main/AndroidManifest.xml                   | 202 [32m+++++[m
+ .../onrender/futebol_basquete/twa/Application.java |  29 [32m+[m
+ .../futebol_basquete/twa/DelegationService.java    |  14 [32m+[m
+ .../futebol_basquete/twa/LauncherActivity.java     |  54 [32m++[m
+ .../drawable-anydpi/shortcut_legacy_background.xml |  25 [32m+[m
+ .../res/drawable-hdpi/ic_notification_icon.png     | Bin [31m0[m -> [32m473[m bytes
+ app/src/main/res/drawable-hdpi/splash.png          | Bin [31m0[m -> [32m4961[m bytes
+ .../res/drawable-mdpi/ic_notification_icon.png     | Bin [31m0[m -> [32m310[m bytes
+ app/src/main/res/drawable-mdpi/splash.png          | Bin [31m0[m -> [32m3246[m bytes
+ .../res/drawable-xhdpi/ic_notification_icon.png    | Bin [31m0[m -> [32m606[m bytes
+ app/src/main/res/drawable-xhdpi/splash.png         | Bin [31m0[m -> [32m6839[m bytes
+ .../res/drawable-xxhdpi/ic_notification_icon.png   | Bin [31m0[m -> [32m854[m bytes
+ app/src/main/res/drawable-xxhdpi/splash.png        | Bin [31m0[m -> [32m11798[m bytes
+ .../res/drawable-xxxhdpi/ic_notification_icon.png  | Bin [31m0[m -> [32m1067[m bytes
+ app/src/main/res/drawable-xxxhdpi/splash.png       | Bin [31m0[m -> [32m18308[m bytes
+ app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml |  33 [32m+[m
+ app/src/main/res/mipmap-hdpi/ic_launcher.png       | Bin [31m0[m -> [32m854[m bytes
+ app/src/main/res/mipmap-hdpi/ic_maskable.png       | Bin [31m0[m -> [32m1353[m bytes
+ app/src/main/res/mipmap-mdpi/ic_launcher.png       | Bin [31m0[m -> [32m606[m bytes
+ app/src/main/res/mipmap-mdpi/ic_maskable.png       | Bin [31m0[m -> [32m978[m bytes
+ app/src/main/res/mipmap-xhdpi/ic_launcher.png      | Bin [31m0[m -> [32m1067[m bytes
+ app/src/main/res/mipmap-xhdpi/ic_maskable.png      | Bin [31m0[m -> [32m1840[m bytes
+ app/src/main/res/mipmap-xxhdpi/ic_launcher.png     | Bin [31m0[m -> [32m1605[m bytes
+ app/src/main/res/mipmap-xxhdpi/ic_maskable.png     | Bin [31m0[m -> [32m2693[m bytes
+ app/src/main/res/mipmap-xxxhdpi/ic_launcher.png    | Bin [31m0[m -> [32m1957[m bytes
+ app/src/main/res/mipmap-xxxhdpi/ic_maskable.png    | Bin [31m0[m -> [32m3535[m bytes
+ app/src/main/res/raw/web_app_manifest.json         |   1 [32m+[m
+ app/src/main/res/values/colors.xml                 |  18 [32m+[m
+ app/src/main/res/values/strings.xml                |  42 [32m+[m
+ app/src/main/res/xml/filepaths.xml                 |  18 [32m+[m
+ app/src/main/res/xml/shortcuts.xml                 |   1 [32m+[m
+ build.gradle                                       |  42 [32m+[m
+ build_teams_dataset.py                             | 151 [32m++++[m
+ data/teams_fc25.csv                                | 727 [32m++++++++++++++++[m
+ data/teams_nba.csv                                 |  43 [32m+[m
+ gradle.properties                                  |  14 [32m+[m
+ gradle/wrapper/gradle-wrapper.jar                  | Bin [31m0[m -> [32m55616[m bytes
+ gradle/wrapper/gradle-wrapper.properties           |   7 [32m+[m
+ gradlew                                            | 249 [32m++++++[m
+ gradlew.bat                                        |  92 [32m++[m
+ import_xlsx_nba.py                                 | 204 [32m+++++[m
+ import_xlsx_teams.py                               | 215 [32m+++++[m
+ manifest-checksum.txt                              |   1 [32m+[m
+ requirements.txt                                   |   8 [32m+[m
+ run.bat                                            |  16 [32m+[m
+ runtime.txt                                        |   1 [32m+[m
+ services/datasets.py                               |  78 [32m++[m
+ services/draws.py                                  | 142 [32m+++[m
+ settings.gradle                                    |   1 [32m+[m
+ static/app.js                                      | 807 [32m+++++++++++++++++[m
+ static/icons/icon-192.png                          | Bin [31m0[m -> [32m1195[m bytes
+ static/icons/icon-512.png                          | Bin [31m0[m -> [32m3753[m bytes
+ static/manifest.webmanifest                        |  12 [32m+[m
+ static/sw.js                                       |   7 [32m+[m
+ static/tournament.js                               | 250 [32m++++++[m
+ store_icon.png                                     | Bin [31m0[m -> [32m3033[m bytes
+ templates/index.html                               | 606 [32m+++++++++++++[m
+ templates/login.html                               |  87 [32m++[m
+ templates/register.html                            |  91 [32m++[m
+ templates/share.html                               | 113 [32m+++[m
+ templates/tournament.html                          | 318 [32m+++++++[m
+ times_fc25.xlsx                                    | Bin [31m0[m -> [32m201673[m bytes
+ times_nba.xlsx                                     | Bin [31m0[m -> [32m9144[m bytes
+ twa-manifest.json                                  |  47 [32m+[m
+ 69 files changed, 5942 insertions(+)
