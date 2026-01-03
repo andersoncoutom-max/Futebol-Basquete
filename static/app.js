@@ -17,7 +17,7 @@ const bracketState = {
 
 const presets = {
   champions: { theme: "champions", rules: { balance: "tiers", avoidRepeat: true } },
-  libertadores: { theme: "libertadores", rules: { balance: "random", avoidRepeat: true } },
+  playoffs: { theme: "libertadores", rules: { balance: "random", avoidRepeat: true } },
   selecoes: { theme: "selecoes", rules: { balance: "tiers", category: "national" } },
   classicos: { theme: "classicos", rules: { balance: "random", category: "clubs" } }
 };
@@ -32,10 +32,10 @@ const themeCopy = {
     title: "Sorteio r\u00e1pido",
     subtitle: "Monte os jogadores e gere confrontos em segundos."
   },
-  libertadores: {
+  playoffs: {
     kicker: "Sorteio de Times para EA FC e NBA 2K",
-    title: "Ritmo de Libertadores",
-    subtitle: "Monte a lista e gere chaveamentos com clima de decis\u00e3o."
+    title: "Playoffs NBA",
+    subtitle: "Chaves diretas, ritmo de eliminat\u00f3rias."
   },
   selecoes: {
     kicker: "Sorteio de Times para EA FC e NBA 2K",
