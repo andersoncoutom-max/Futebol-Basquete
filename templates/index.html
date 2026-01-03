@@ -17,7 +17,8 @@
       --bg-2: #eef2f9;
       --ink: #0c1b33;
       --muted: rgba(15, 30, 50, 0.62);
-      --card: rgba(255, 255, 255, 0.92);
+      --card: rgba(255, 255, 255, 0.96);
+      --card-2: rgba(255, 255, 255, 0.86);
       --stroke: rgba(12, 27, 51, 0.12);
       --accent: #16c3b5;
       --accent-2: #18b26b;
@@ -98,6 +99,64 @@
         linear-gradient(180deg, #ecfeff, #f0f9ff);
     }
 
+    body.theme-dark {
+      --bg: #0b1220;
+      --bg-2: #0b1220;
+      --ink: #e2e8f0;
+      --muted: rgba(226, 232, 240, 0.7);
+      --card: rgba(15, 23, 42, 0.92);
+      --card-2: rgba(15, 23, 42, 0.84);
+      --stroke: rgba(148, 163, 184, 0.22);
+      --shadow: 0 18px 48px rgba(2, 6, 23, 0.6);
+      background:
+        radial-gradient(900px 520px at 0% -10%, rgba(22, 195, 181, 0.12), transparent 55%),
+        radial-gradient(900px 520px at 100% 0%, rgba(24, 178, 107, 0.1), transparent 55%),
+        linear-gradient(180deg, #0b1220, #0b1220);
+    }
+
+    body.theme-dark::before { opacity: 0.08; }
+
+    body.theme-dark .hero {
+      background:
+        radial-gradient(600px 240px at 10% 0%, rgba(22, 195, 181, 0.12), transparent 60%),
+        radial-gradient(600px 240px at 90% 0%, rgba(24, 178, 107, 0.1), transparent 60%),
+        linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.88));
+    }
+
+    body.theme-dark .tab-btn {
+      border-color: rgba(148, 163, 184, 0.25);
+      background: rgba(15, 23, 42, 0.7);
+      color: rgba(226, 232, 240, 0.8);
+    }
+
+    body.theme-dark .tab-btn.active {
+      background: rgba(15, 23, 42, 0.92);
+      border-color: rgba(148, 163, 184, 0.35);
+      color: #f8fafc;
+    }
+
+    body.theme-dark .btn-ghost {
+      background: rgba(15, 23, 42, 0.7);
+      color: var(--ink);
+    }
+
+    body.theme-dark .chip {
+      background: rgba(15, 23, 42, 0.85);
+      border-color: rgba(148, 163, 184, 0.22);
+    }
+
+    body.theme-dark .result-card {
+      background: linear-gradient(135deg, var(--badge-soft, rgba(15, 23, 42, 0.2)), rgba(15, 23, 42, 0.92));
+      border-color: rgba(148, 163, 184, 0.2);
+    }
+
+    body.theme-dark .benefit-pill {
+      background: rgba(15, 23, 42, 0.8);
+      border-color: rgba(148, 163, 184, 0.2);
+    }
+
+    body.theme-dark .table { color: var(--ink); }
+
     .shell {
       max-width: 1180px;
       margin: 0 auto;
@@ -107,7 +166,7 @@
     }
 
     .glass {
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.86));
+      background: linear-gradient(180deg, var(--card), var(--card-2));
       border: 1px solid rgba(13, 21, 38, 0.08);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
@@ -119,7 +178,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 16px;
-      padding: 14px 18px;
+      padding: 10px 16px;
       background: linear-gradient(135deg, var(--dark-1), var(--dark-2));
       color: rgba(255, 255, 255, 0.92);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -132,8 +191,8 @@
     }
 
     .brand-logo {
-      width: 42px;
-      height: 42px;
+      width: 38px;
+      height: 38px;
       border-radius: 14px;
       background: linear-gradient(135deg, var(--accent), var(--accent-2));
       display: grid;
@@ -146,7 +205,7 @@
 
     .brand-title {
       font-family: "Fraunces", serif;
-      font-size: 1.35rem;
+      font-size: 1.2rem;
       letter-spacing: 0.01em;
     }
 
@@ -156,6 +215,12 @@
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
+    }
+
+    .room-status {
+      padding-left: 6px;
+      font-size: 0.78rem;
+      color: rgba(255, 255, 255, 0.7);
     }
 
     .btn-ghost {
@@ -180,8 +245,8 @@
     }
 
     .hero {
-      margin-top: 18px;
-      padding: 20px;
+      margin-top: 14px;
+      padding: 14px;
       display: grid;
       gap: 18px;
       background:
@@ -192,7 +257,7 @@
 
     .hero h1 {
       font-family: "Fraunces", serif;
-      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      font-size: clamp(1.4rem, 2.4vw, 2rem);
       margin-bottom: 8px;
     }
 
@@ -207,25 +272,26 @@
       min-width: 160px;
     }
 
-    .theme-picker {
-      display: flex;
-      flex-wrap: wrap;
+    .benefits-row {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
       gap: 10px;
-      margin-top: 12px;
     }
 
-    .theme-pill {
-      border-radius: 999px;
-      padding: 6px 14px;
-      font-weight: 600;
-      border: 1px solid rgba(12, 27, 51, 0.18);
+    .benefit-pill {
+      border-radius: 14px;
+      padding: 8px 10px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      border: 1px solid rgba(12, 27, 51, 0.12);
       background: rgba(255, 255, 255, 0.7);
-      color: var(--ink);
+      font-size: 0.85rem;
     }
 
-    .theme-pill.active {
-      background: linear-gradient(135deg, rgba(22, 195, 181, 0.25), rgba(24, 178, 107, 0.25));
-      border-color: rgba(22, 195, 181, 0.55);
+    .benefit-pill span {
+      font-weight: 600;
     }
 
     .muted { color: var(--muted); }
@@ -259,15 +325,15 @@
     }
 
     .hero-icon {
-      width: 34px;
-      height: 34px;
+      width: 30px;
+      height: 30px;
       border-radius: 12px;
       display: grid;
       place-items: center;
       background: linear-gradient(135deg, rgba(22, 195, 181, 0.2), rgba(24, 178, 107, 0.2));
       color: #0b1f2a;
       font-weight: 800;
-      font-size: 0.95rem;
+      font-size: 0.82rem;
     }
 
     .hero-card strong { font-size: 0.95rem; }
@@ -297,8 +363,8 @@
     }
 
     .tabs {
-      margin-top: 18px;
-      padding: 8px;
+      margin-top: 14px;
+      padding: 6px;
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
@@ -312,9 +378,10 @@
       background: rgba(255, 255, 255, 0.08);
       color: rgba(255, 255, 255, 0.9);
       font-weight: 700;
-      padding: 8px 14px;
+      padding: 6px 12px;
       border-radius: 999px;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
+      opacity: 0.7;
     }
 
     .tab-btn .tab-step {
@@ -329,10 +396,11 @@
     }
 
     .tab-btn.active {
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
-      border: none;
-      color: #0b1320;
-      box-shadow: 0 12px 30px rgba(22, 195, 181, 0.25);
+      background: rgba(255, 255, 255, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      color: #f8fafc;
+      box-shadow: none;
+      opacity: 1;
     }
 
     .tab-panels {
@@ -412,6 +480,18 @@
       height: 22px;
       line-height: 20px;
       font-weight: 700;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .chip:hover .chip-remove {
+      opacity: 1;
+    }
+
+    .chip-remove:focus-visible {
+      opacity: 1;
+      outline: 2px solid rgba(22, 195, 181, 0.45);
+      outline-offset: 2px;
     }
 
     .empty-state {
@@ -433,10 +513,30 @@
       border-radius: 16px;
       padding: 12px;
       border: 1px solid rgba(12, 27, 51, 0.12);
-      background: rgba(255, 255, 255, 0.92);
+      background: linear-gradient(135deg, var(--badge-soft, rgba(255, 255, 255, 0.7)), rgba(255, 255, 255, 0.96));
       display: grid;
       gap: 6px;
       box-shadow: 0 12px 24px rgba(11, 31, 42, 0.08);
+    }
+
+    .result-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .team-badge {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: var(--badge, linear-gradient(135deg, var(--accent), var(--accent-2)));
+      color: #0b1320;
+      font-weight: 800;
+      display: grid;
+      place-items: center;
+      font-size: 0.85rem;
+      letter-spacing: 0.04em;
+      box-shadow: 0 10px 18px rgba(15, 23, 42, 0.12);
     }
 
     .result-card .player {
@@ -460,6 +560,17 @@
       font-size: 0.78rem;
       border: 1px solid rgba(12, 27, 51, 0.12);
       background: rgba(15, 23, 42, 0.06);
+    }
+
+    .result-card.live-reveal {
+      opacity: 0;
+      transform: translateY(6px) scale(0.98);
+    }
+
+    .result-card.live-reveal.is-visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      transition: opacity 0.45s ease, transform 0.45s ease;
     }
 
     .table thead th { font-weight: 600; }
@@ -616,6 +727,38 @@
       50% { box-shadow: 0 0 0 8px rgba(22, 195, 181, 0.18); }
     }
 
+    body.tv-mode .hero,
+    body.tv-mode .tabs,
+    body.tv-mode #step-jogadores,
+    body.tv-mode #step-regras,
+    body.tv-mode #step-compartilhar,
+    body.tv-mode .benefits-row {
+      display: none !important;
+    }
+
+    body.tv-mode .tab-panel { display: none !important; }
+
+    body.tv-mode #step-sorteio,
+    body.tv-mode #step-chaveamento { display: block !important; }
+
+    body.tv-mode .topbar-actions .btn:not(#tvToggleBtn),
+    body.tv-mode .room-status { display: none; }
+
+    body.tv-mode .shell { max-width: 1400px; padding-top: 16px; }
+
+    body.tv-mode .section-title { font-size: 1.2rem; }
+
+    body.tv-mode .result-card { font-size: 1.05rem; }
+
+    @media (max-width: 720px) {
+      .topbar-actions { width: 100%; }
+      .hero-actions .btn { width: 100%; }
+      .tab-btn { font-size: 0.82rem; padding: 6px 10px; }
+      .tab-btn .tab-step { width: 20px; height: 20px; }
+      .action-row .btn { width: 100%; }
+      .result-grid { grid-template-columns: 1fr; }
+    }
+
     @media (max-width: 992px) {
       .layout { grid-template-columns: 1fr; }
       .topbar { flex-direction: column; align-items: flex-start; }
@@ -633,6 +776,11 @@
         </div>
       </div>
       <div class="topbar-actions">
+        <button id="createRoomBtn" class="btn btn-accent btn-sm">Criar sala</button>
+        <button id="joinRoomBtn" class="btn btn-ghost btn-sm">Entrar com código</button>
+        <button id="themeToggleBtn" class="btn btn-ghost btn-sm">Tema escuro</button>
+        <button id="tvToggleBtn" class="btn btn-ghost btn-sm">Modo TV</button>
+        <span class="room-status muted small" id="roomStatus"></span>
       </div>
     </header>
 
@@ -642,36 +790,8 @@
         <h1 id="heroTitle">Defina a lista e sorteie em segundos</h1>
         <p class="muted mb-0" id="heroSubtitle">Monte a lista, sorteie times equilibrados e gere o chaveamento rapidamente.</p>
         <div class="hero-actions">
-          <a class="btn btn-accent" href="#step-jogadores">Adicionar jogadores</a>
+          <a class="btn btn-accent" href="#step-jogadores">Começar</a>
           <a class="btn btn-ghost" href="#step-sorteio">Ver sorteio</a>
-        </div>
-        <div class="theme-picker">
-          <button class="theme-pill active" data-theme="champions">Noite de Champions</button>
-          <button class="theme-pill" data-theme="libertadores">Libertadores</button>
-          <button class="theme-pill" data-theme="selecoes">Selecoes</button>
-          <button class="theme-pill" data-theme="classicos">Classicos</button>
-        </div>
-      </div>
-      <div class="hero-grid">
-        <div class="hero-card">
-          <div class="hero-icon">SP</div>
-          <strong>Sorteio em segundos</strong>
-          <span class="muted">Fluxo direto, sem ruido.</span>
-        </div>
-        <div class="hero-card">
-          <div class="hero-icon">BR</div>
-          <strong>Chaveamento automatico</strong>
-          <span class="muted">Clique e avance as fases.</span>
-        </div>
-        <div class="hero-card">
-          <div class="hero-icon">CSV</div>
-          <strong>Exportacao rapida</strong>
-          <span class="muted">CSV, PNG e XLSX.</span>
-        </div>
-        <div class="hero-card">
-          <div class="hero-icon">PRO</div>
-          <strong>Sem excesso</strong>
-          <span class="muted">Apenas o essencial.</span>
         </div>
       </div>
     </section>
@@ -699,21 +819,21 @@
         <div class="layout single">
           <div class="glass p-3 reveal">
             <div class="d-flex align-items-center justify-content-between mb-2">
-              <div class="section-title mb-0">Jogadores</div>
-              <span class="count-pill rounded-pill" id="participantCount">0</span>
+              <div class="section-title mb-0" id="participantTitle">Jogadores (0)</div>
             </div>
             <label class="form-label" for="participantInput">Adicionar jogador</label>
             <div class="input-group mb-2">
               <input id="participantInput" class="form-control" placeholder="Ex.: Anderson" />
               <button id="addParticipantBtn" class="btn btn-accent pulse">Adicionar</button>
             </div>
-            <details class="mt-2">
-              <summary class="muted small">Colar lista (1 por linha)</summary>
-              <textarea id="bulkInput" class="form-control mt-2" rows="3" placeholder="Anderson&#10;Joao&#10;Maria"></textarea>
+            <details class="mt-2" id="pasteDetails">
+              <summary class="muted small">Colar lista</summary>
+              <textarea id="bulkInput" class="form-control mt-2" rows="3" placeholder="Cole aqui (1 por linha)"></textarea>
+              <div id="bulkFeedback" class="muted small mt-1"></div>
               <div class="action-row compact mt-2">
                 <button id="importBtn" class="btn btn-ghost btn-sm">Adicionar lista</button>
                 <button id="pasteBtn" class="btn btn-ghost btn-sm">Colar do clipboard</button>
-                <button id="undoBtn" class="btn btn-ghost btn-sm">Desfazer ultimo</button>
+                <button id="undoBtn" class="btn btn-ghost btn-sm">Desfazer último</button>
                 <button id="sortParticipantsBtn" class="btn btn-ghost btn-sm">Ordenar A-Z</button>
                 <button id="clearParticipantsBtn" class="btn btn-ghost btn-sm">Limpar tudo</button>
                 <button id="newSeasonBtn" class="btn btn-ghost btn-sm">Nova temporada</button>
@@ -727,25 +847,25 @@
       <div class="tab-panel" data-tab="regras" id="step-regras">
         <div class="layout single">
           <div class="glass p-3 reveal" id="shareCapture">
-            <div class="section-title">Regras do sorteio</div>
-            <div class="dataset-tabs mt-2">
-              <button class="dataset-tab active" id="datasetFc25Btn" data-dataset="fc25">Futebol</button>
-              <button class="dataset-tab" id="datasetNbaBtn" data-dataset="nba">Basquete</button>
-            </div>
-            <div class="row g-2 align-items-end mt-3">
-              <div class="col-md-6">
-                <label class="form-label">Preset rapido</label>
-                <select id="presetSelect" class="form-select">
-                  <option value="quick">Sorteio rapido</option>
-                  <option value="campeonato">Campeonato completo</option>
-                  <option value="selecoes">Modo selecoes</option>
-                  <option value="classicos">Classicos balanceados</option>
-                </select>
+              <div class="section-title">Regras do sorteio</div>
+              <div class="dataset-tabs mt-2">
+                <button class="dataset-tab active" id="datasetFc25Btn" data-dataset="fc25">Futebol</button>
+                <button class="dataset-tab" id="datasetNbaBtn" data-dataset="nba">NBA 2K</button>
               </div>
-              <div class="col-md-6">
-                <label class="form-label">Balanceamento</label>
-                <select id="balanceSelect" class="form-select">
-                  <option value="random">Aleatorio</option>
+              <div class="row g-2 align-items-end mt-3">
+                <div class="col-md-6">
+                  <label class="form-label">Preset visual</label>
+                  <select id="presetSelect" class="form-select">
+                    <option value="champions">Noite de Champions</option>
+                    <option value="libertadores">Libertadores</option>
+                    <option value="selecoes">Seleções</option>
+                    <option value="classicos">Clássicos</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Balanceamento</label>
+                  <select id="balanceSelect" class="form-select">
+                    <option value="random">Aleatório</option>
                   <option value="tiers">Por tiers (A/B/C/D)</option>
                 </select>
               </div>
@@ -754,15 +874,19 @@
               <div class="col-md-6">
                 <div class="form-check mt-4">
                   <input class="form-check-input" type="checkbox" id="avoidRepeatToggle">
-                  <label class="form-check-label" for="avoidRepeatToggle">Evitar repetir time do ultimo sorteio</label>
+                  <label class="form-check-label" for="avoidRepeatToggle">Evitar repetir time do último sorteio</label>
                 </div>
                 <div class="form-check mt-2">
                   <input class="form-check-input" type="checkbox" id="avoidRepeat3Toggle">
-                  <label class="form-check-label" for="avoidRepeat3Toggle">Evitar repetir nas ultimas 3 rodadas</label>
+                  <label class="form-check-label" for="avoidRepeat3Toggle">Evitar repetir nas últimas 3 rodadas</label>
+                </div>
+                <div class="form-check mt-2">
+                  <input class="form-check-input" type="checkbox" id="liveModeToggle">
+                  <label class="form-check-label" for="liveModeToggle">Modo ao vivo (revelação)</label>
                 </div>
               </div>
               <div class="col-md-6">
-                <label class="form-label">Seed (transparencia)</label>
+                <label class="form-label">Seed (transparência)</label>
                 <div class="input-group">
                   <input id="seedInput" class="form-control" placeholder="Ex.: 9F3A" />
                   <button id="seedBtn" class="btn btn-ghost" type="button">Gerar</button>
@@ -770,23 +894,25 @@
               </div>
             </div>
             <details class="mt-3">
-              <summary class="muted small">Opcoes avancadas</summary>
+              <summary class="muted small">Opções avançadas</summary>
               <div class="row g-2 align-items-end mt-2">
                 <div class="col-md-6">
-                  <label class="form-label">Conjunto de times</label>
+                  <label class="form-label">Modo de times</label>
                   <select id="modeSelect" class="form-select">
                     <option value="all">Todos os times</option>
                     <option value="top">Top N por overall</option>
+                    <option value="clubs">Somente clubes</option>
+                    <option value="national">Somente seleções</option>
                   </select>
                 </div>
-                <div class="col-md-6">
-                  <label class="form-label">Top N por overall (opcional)</label>
+                <div class="col-md-6" id="topNWrap">
+                  <label class="form-label">Limite (Top N por overall)</label>
                   <input id="topNInput" type="number" class="form-control" value="10" min="1" />
                 </div>
               </div>
               <div class="row g-2 align-items-end mt-2">
                 <div class="col-md-6">
-                  <label class="form-label">Liga / Selecoes</label>
+                  <label class="form-label">Liga / Seleções</label>
                   <select id="categorySelect" class="form-select"></select>
                 </div>
               </div>
@@ -805,12 +931,29 @@
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
               <div class="section-title mb-0">Sorteio</div>
               <div class="action-row compact">
-                <button id="copyBtn" class="btn btn-ghost btn-sm" disabled>Copiar resultado</button>
-                <button id="shareBtn" class="btn btn-ghost btn-sm" disabled>Copiar para WhatsApp</button>
+                <button id="copyBtn" class="btn btn-ghost btn-sm" disabled>Copiar para WhatsApp</button>
+                <button id="shareBtn" class="btn btn-ghost btn-sm" disabled>Copiar tabela</button>
+                <button id="toggleViewBtn" class="btn btn-ghost btn-sm" disabled>Ver tabela</button>
               </div>
             </div>
             <div id="resultMeta" class="muted small mt-2"></div>
             <div id="resultCards" class="result-grid"></div>
+            <div id="resultTableWrap" class="table-responsive mt-3 d-none">
+              <table class="table table-striped align-middle">
+                <thead>
+                  <tr>
+                    <th>Participante</th>
+                    <th>Time</th>
+                    <th>Categoria</th>
+                    <th>OVR</th>
+                    <th>ATT</th>
+                    <th>MID</th>
+                    <th>DEF</th>
+                  </tr>
+                </thead>
+                <tbody id="resultTbody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -828,7 +971,7 @@
             </div>
             <div class="d-flex align-items-center gap-2 mb-2">
               <span id="bracketStatus" class="muted small"></span>
-              <button id="nextRoundBtn" class="btn btn-ghost btn-sm d-none">Avancar fase</button>
+              <button id="nextRoundBtn" class="btn btn-ghost btn-sm d-none">Avançar fase</button>
             </div>
             <div class="bracket-wrap">
               <svg class="bracket-lines" id="bracketLines"></svg>
@@ -872,6 +1015,13 @@
         </div>
       </div>
 
+    </section>
+
+    <section class="benefits-row">
+      <div class="benefit-pill"><span>Sorteio rápido</span><span class="muted">em segundos</span></div>
+      <div class="benefit-pill"><span>Chaveamento</span><span class="muted">automático</span></div>
+      <div class="benefit-pill"><span>Compartilhar</span><span class="muted">WhatsApp/PNG</span></div>
+      <div class="benefit-pill"><span>Sem complicação</span><span class="muted">só o essencial</span></div>
     </section>
   </div>
 

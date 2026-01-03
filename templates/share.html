@@ -88,11 +88,11 @@
       if (payload.dataset === "nba") {
         return g === "WOMEN" ? "WNBA" : "NBA";
       }
-      if (t === "NATIONAL" && g === "WOMEN") return "Selecoes femininas";
-      if (t === "NATIONAL" && g === "MEN") return "Selecoes masculinas";
+      if (t === "NATIONAL" && g === "WOMEN") return "Seleções femininas";
+      if (t === "NATIONAL" && g === "MEN") return "Seleções masculinas";
       if (t === "CLUB" && g === "WOMEN") return "Clubes femininos";
       if (t === "CLUB" && g === "MEN") return "Clubes masculinos";
-      if (t === "NATIONAL") return "Selecoes";
+      if (t === "NATIONAL") return "Seleções";
       return "Clubes";
     }
     draw.forEach((row) => {

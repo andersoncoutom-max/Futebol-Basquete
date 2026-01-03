@@ -1,7 +1,8 @@
-
-const participants = [];
+﻿const participants = [];
 let lastRemoved = null;
 let lastDraw = null;
+let resultView = "cards";
+let liveMode = false;
 
 const PRO_DEFAULT_URL = "https://wa.me/55SEU_NUMERO?text=Quero%20assinar%20o%20Sorteio%20Pro";
 
@@ -15,38 +16,10 @@ const bracketState = {
 };
 
 const presets = {
-  quick: {
-    balance: "random",
-    mode: "all",
-    topN: 10,
-    category: "all",
-    avoidRepeat: false,
-    avoidRepeatWindow: 1
-  },
-  campeonato: {
-    balance: "tiers",
-    mode: "top",
-    topN: 20,
-    category: "clubs",
-    avoidRepeat: true,
-    avoidRepeatWindow: 3
-  },
-  selecoes: {
-    balance: "tiers",
-    mode: "all",
-    topN: 10,
-    category: "national",
-    avoidRepeat: false,
-    avoidRepeatWindow: 1
-  },
-  classicos: {
-    balance: "tiers",
-    mode: "top",
-    topN: 16,
-    category: "clubs_men",
-    avoidRepeat: true,
-    avoidRepeatWindow: 1
-  }
+  champions: { theme: "champions", rules: { balance: "tiers", avoidRepeat: true } },
+  libertadores: { theme: "libertadores", rules: { balance: "random", avoidRepeat: true } },
+  selecoes: { theme: "selecoes", rules: { balance: "tiers", category: "national" } },
+  classicos: { theme: "classicos", rules: { balance: "random", category: "clubs" } }
 };
 
 const tabButtons = document.querySelectorAll("[data-tab-target]");
@@ -57,22 +30,22 @@ const themeCopy = {
   champions: {
     kicker: "Sorteio de Times para EA FC",
     title: "Noite de Champions",
-    subtitle: "Organize confrontos grandes e sorteie times de forma rapida."
+    subtitle: "Organize confrontos grandes e sorteie times de forma r\u00e1pida."
   },
   libertadores: {
     kicker: "Sorteio de Times para EA FC",
     title: "Ritmo de Libertadores",
-    subtitle: "Monte a lista e gere chaveamentos com clima de decisao."
+    subtitle: "Monte a lista e gere chaveamentos com clima de decis\u00e3o."
   },
   selecoes: {
     kicker: "Sorteio de Times para EA FC",
-    title: "Noite de Selecoes",
-    subtitle: "Sorteie selecoes e mantenha o equilibrio entre os jogadores."
+    title: "Noite de Sele\u00e7\u00f5es",
+    subtitle: "Sorteie sele\u00e7\u00f5es e mantenha o equil\u00edbrio entre os jogadores."
   },
   classicos: {
     kicker: "Sorteio de Times para EA FC",
-    title: "Classicos e rivalidades",
-    subtitle: "Rapido para montar elencos e dividir os times."
+    title: "Cl\u00e1ssicos e rivalidades",
+    subtitle: "R\u00e1pido para montar elencos e dividir os times."
   }
 };
 
@@ -123,40 +96,189 @@ function generateSeed() {
   return Math.random().toString(16).slice(2, 6).toUpperCase();
 }
 
+function getStorageBool(key, fallback = false) {
+  const raw = localStorage.getItem(key);
+  if (raw === null) return fallback;
+  return raw === "1";
+}
+
+function setStorageBool(key, value) {
+  localStorage.setItem(key, value ? "1" : "0");
+}
+
+function hashString(value) {
+  let hash = 0;
+  const str = String(value || "");
+  for (let i = 0; i < str.length; i += 1) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+function badgeText(value) {
+  const clean = String(value || "").trim();
+  if (!clean) return "SP";
+  const parts = clean.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+function badgeColors(value) {
+  const h = hashString(value) % 360;
+  return {
+    solid: `hsl(${h} 70% 55%)`,
+    soft: `hsla(${h} 70% 55% / 0.2)`
+  };
+}
+
+function getLiveMode() {
+  const toggle = document.getElementById("liveModeToggle");
+  if (toggle) return toggle.checked;
+  return getStorageBool("liveMode", false);
+}
+
 function applyPreset(name) {
   const preset = presets[name];
   if (!preset) return;
-  const balanceSelect = document.getElementById("balanceSelect");
-  const modeSelect = document.getElementById("modeSelect");
-  const topNInput = document.getElementById("topNInput");
-  const categorySelect = document.getElementById("categorySelect");
-  const avoidRepeatToggle = document.getElementById("avoidRepeatToggle");
-  const avoidRepeat3Toggle = document.getElementById("avoidRepeat3Toggle");
-
-  if (balanceSelect) balanceSelect.value = preset.balance;
-  if (modeSelect) modeSelect.value = preset.mode;
-  if (topNInput) topNInput.value = String(preset.topN);
-  if (categorySelect) {
-    const hasOption = Array.from(categorySelect.options).some((opt) => opt.value === preset.category);
-    if (hasOption) {
-      categorySelect.value = preset.category;
-    }
+  if (preset.theme) {
+    setTheme(preset.theme);
   }
-  if (avoidRepeatToggle) avoidRepeatToggle.checked = preset.avoidRepeat;
-  if (avoidRepeat3Toggle) avoidRepeat3Toggle.checked = preset.avoidRepeatWindow === 3;
+
+  const rules = preset.rules || {};
+  const balanceSelect = document.getElementById("balanceSelect");
+  if (balanceSelect && rules.balance && balanceSelect.querySelector(`option[value="${rules.balance}"]`)) {
+    balanceSelect.value = rules.balance;
+  }
+
+  const avoidRepeatToggle = document.getElementById("avoidRepeatToggle");
+  if (avoidRepeatToggle && typeof rules.avoidRepeat === "boolean") {
+    avoidRepeatToggle.checked = rules.avoidRepeat;
+  }
+
+  const avoidRepeat3Toggle = document.getElementById("avoidRepeat3Toggle");
+  if (avoidRepeat3Toggle && typeof rules.avoidRepeat3 === "boolean") {
+    avoidRepeat3Toggle.checked = rules.avoidRepeat3;
+  }
+
+  const modeSelect = document.getElementById("modeSelect");
+  if (modeSelect && rules.mode && modeSelect.querySelector(`option[value="${rules.mode}"]`)) {
+    modeSelect.value = rules.mode;
+    toggleTopN();
+  }
+
+  const categorySelect = document.getElementById("categorySelect");
+  if (categorySelect && rules.category && categorySelect.querySelector(`option[value="${rules.category}"]`)) {
+    categorySelect.value = rules.category;
+  }
+
+  syncModeCategory();
+}
+
+function renderResults(drawObj, seedFallback) {
+  if (!drawObj) return;
+  setActionButtons(true);
+
+  const live = getLiveMode();
+  const cards = document.getElementById("resultCards");
+  if (cards) {
+    cards.innerHTML = "";
+    drawObj.draw.forEach((row, idx) => {
+      const label = categoryLabel(row.team_type, row.gender);
+      const badgeSource = row.team_name || row.participant;
+      const colors = badgeColors(badgeSource);
+      const badge = badgeText(badgeSource);
+      const card = document.createElement("div");
+      card.className = "result-card";
+      card.style.setProperty("--badge", colors.solid);
+      card.style.setProperty("--badge-soft", colors.soft);
+      card.innerHTML = `
+        <div class="result-head">
+          <div class="team-badge">${badge}</div>
+          <div>
+            <div class="player">${row.participant}</div>
+            <div class="team">${row.team_name}</div>
+            <div class="muted small">${label}</div>
+          </div>
+        </div>
+        <div class="result-badges">
+          <span class="badge-pill">OVR ${row.overall}</span>
+          <span class="badge-pill">ATT ${row.attack}</span>
+          <span class="badge-pill">MID ${row.midfield}</span>
+          <span class="badge-pill">DEF ${row.defence}</span>
+        </div>
+      `;
+      if (live) {
+        card.classList.add("live-reveal");
+        setTimeout(() => card.classList.add("is-visible"), idx * 120);
+      }
+      cards.appendChild(card);
+    });
+  }
+
+  const tbody = document.getElementById("resultTbody");
+  if (tbody) {
+    tbody.innerHTML = "";
+    drawObj.draw.forEach((row) => {
+      const tr = document.createElement("tr");
+      const label = categoryLabel(row.team_type, row.gender);
+      tr.innerHTML = `
+        <td>${row.participant}</td>
+        <td>${row.team_name}</td>
+        <td>${label}</td>
+        <td>${row.overall}</td>
+        <td>${row.attack}</td>
+        <td>${row.midfield}</td>
+        <td>${row.defence}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  const resultMeta = document.getElementById("resultMeta");
+  if (resultMeta) {
+    const meta = drawObj.meta || {};
+    const when = meta.timestamp ? new Date(meta.timestamp).toLocaleString() : "";
+    const seedLabel = meta.seed === "auto" ? seedFallback : meta.seed || seedFallback || "N/A";
+    const balanceLabel = meta.balance_mode === "tiers" ? "tiers A/B/C/D" : "aleat\u00f3rio";
+    const repeatLabel = meta.avoid_repeat ? `sem repeti\u00e7\u00e3o (${meta.avoid_repeat_window || 1})` : "repeti\u00e7\u00e3o liberada";
+    const ovrs = drawObj.draw.map((row) => Number(row.overall || 0)).filter((v) => !Number.isNaN(v));
+    const avg = ovrs.length ? Math.round(ovrs.reduce((a, b) => a + b, 0) / ovrs.length) : 0;
+    const diff = ovrs.length ? Math.max(...ovrs) - Math.min(...ovrs) : 0;
+    const eq = diff <= 3 ? "alto" : diff <= 6 ? "bom" : "m\u00e9dio";
+    resultMeta.textContent = `Seed: ${seedLabel} | ${when} | Balanceamento: ${balanceLabel} | ${repeatLabel} | M\u00e9dia OVR ${avg} | Diferen\u00e7a ${diff} | Equil\u00edbrio ${eq}`;
+  }
+
+  setResultView(resultView);
+}
+
+function updateBulkFeedback(value) {
+  const feedback = document.getElementById("bulkFeedback");
+  if (!feedback) return;
+  const lines = (value || "")
+    .split(/\r?\n/)
+    .map((s) => normalizeName(s))
+    .filter(Boolean);
+  if (!lines.length) {
+    feedback.textContent = "";
+    return;
+  }
+  const unique = new Set(lines.map((item) => item.toLowerCase()));
+  const dupes = lines.length - unique.size;
+  feedback.textContent = `${lines.length} nomes detectados \u00b7 ${dupes} duplicados na lista`;
 }
 
 function renderParticipants() {
   const ul = document.getElementById("participantsList");
-  const count = document.getElementById("participantCount");
-  if (count) count.textContent = String(participants.length);
+  const title = document.getElementById("participantTitle");
+  if (title) title.textContent = `Jogadores (${participants.length})`;
 
   ul.innerHTML = "";
 
   if (!participants.length) {
     const empty = document.createElement("div");
     empty.className = "empty-state muted small";
-    empty.textContent = "Cole uma lista: Anderson, Joao, Maria...";
+    empty.textContent = "Cole aqui (1 por linha).";
     ul.appendChild(empty);
     return;
   }
@@ -170,7 +292,8 @@ function renderParticipants() {
 
     const btn = document.createElement("button");
     btn.className = "chip-remove";
-    btn.textContent = "x";
+    btn.innerHTML = "&#128465;";
+    btn.setAttribute("aria-label", "Remover");
     btn.onclick = () => {
       lastRemoved = participants.splice(idx, 1)[0];
       renderParticipants();
@@ -206,11 +329,11 @@ function categoryLabel(teamType, gender) {
     return g === "WOMEN" ? "WNBA" : "NBA";
   }
 
-  if (t === "NATIONAL" && g === "WOMEN") return "Selecoes femininas";
-  if (t === "NATIONAL" && g === "MEN") return "Selecoes masculinas";
+  if (t === "NATIONAL" && g === "WOMEN") return "Sele\u00e7\u00f5es femininas";
+  if (t === "NATIONAL" && g === "MEN") return "Sele\u00e7\u00f5es masculinas";
   if (t === "CLUB" && g === "WOMEN") return "Clubes femininos";
   if (t === "CLUB" && g === "MEN") return "Clubes masculinos";
-  if (t === "NATIONAL") return "Selecoes";
+  if (t === "NATIONAL") return "Sele\u00e7\u00f5es";
   return "Clubes";
 }
 
@@ -567,6 +690,57 @@ function renderRoundRobin(rr) {
   });
 }
 
+function updateModeOptions() {
+  const select = document.getElementById("modeSelect");
+  if (!select) return;
+
+  const previous = select.value;
+  const options = [
+    { value: "all", label: "Todos os times" },
+    { value: "top", label: "Top N por overall" }
+  ];
+
+  if (datasetState.current !== "nba") {
+    options.push({ value: "clubs", label: "Somente clubes" });
+    options.push({ value: "national", label: "Somente sele\u00e7\u00f5es" });
+  }
+
+  select.innerHTML = "";
+  options.forEach((opt) => {
+    const option = document.createElement("option");
+    option.value = opt.value;
+    option.textContent = opt.label;
+    select.appendChild(option);
+  });
+
+  if (previous && options.some((opt) => opt.value === previous)) {
+    select.value = previous;
+  } else {
+    select.value = "all";
+  }
+
+  toggleTopN();
+  syncModeCategory();
+}
+
+function syncModeCategory() {
+  const modeSelect = document.getElementById("modeSelect");
+  const categorySelect = document.getElementById("categorySelect");
+  if (!modeSelect || !categorySelect) return;
+
+  if (modeSelect.value === "clubs") {
+    const target = datasetState.current === "nba" ? "clubs_men" : "clubs";
+    if (categorySelect.querySelector(`option[value="${target}"]`)) {
+      categorySelect.value = target;
+    }
+  } else if (modeSelect.value === "national") {
+    const target = "national";
+    if (categorySelect.querySelector(`option[value="${target}"]`)) {
+      categorySelect.value = target;
+    }
+  }
+}
+
 function updateCategoryOptions() {
   const select = document.getElementById("categorySelect");
   if (!select) return;
@@ -583,9 +757,9 @@ function updateCategoryOptions() {
     options.push({ value: "clubs", label: "Clubes (todos)" });
     options.push({ value: "clubs_men", label: "Clubes masculinos" });
     options.push({ value: "clubs_women", label: "Clubes femininos" });
-    options.push({ value: "national", label: "Selecoes (todas)" });
-    options.push({ value: "national_men", label: "Selecoes masculinas" });
-    options.push({ value: "national_women", label: "Selecoes femininas" });
+    options.push({ value: "national", label: "Sele\u00e7\u00f5es (todas)" });
+    options.push({ value: "national_men", label: "Sele\u00e7\u00f5es masculinas" });
+    options.push({ value: "national_women", label: "Sele\u00e7\u00f5es femininas" });
   }
 
   select.innerHTML = "";
@@ -640,7 +814,7 @@ function updateStatsLabels(stats) {
     labelTotal.textContent = "Times";
     labelClubs.textContent = "Clubes";
     labelWomen.textContent = "Feminino";
-    labelNational.textContent = "Selecoes";
+    labelNational.textContent = "Sele\u00e7\u00f5es";
   }
 }
 
@@ -665,7 +839,9 @@ function setDataset(dataset) {
   }
   updateDatasetTabs();
   updateCategoryOptions();
+  updateModeOptions();
   if (presetSelect) applyPreset(presetSelect.value);
+  toggleTopN();
   loadTeamsInfo();
   resetBracket();
 
@@ -678,6 +854,24 @@ function setDataset(dataset) {
   }
   lastDraw = null;
   setActionButtons(false);
+  setResultView("cards");
+}
+
+function toggleTopN() {
+  const modeSelect = document.getElementById("modeSelect");
+  const topWrap = document.getElementById("topNWrap");
+  if (!modeSelect || !topWrap) return;
+  topWrap.classList.toggle("d-none", modeSelect.value !== "top");
+}
+
+function setResultView(view) {
+  resultView = view;
+  const cards = document.getElementById("resultCards");
+  const tableWrap = document.getElementById("resultTableWrap");
+  const toggleBtn = document.getElementById("toggleViewBtn");
+  if (cards) cards.classList.toggle("d-none", view === "table");
+  if (tableWrap) tableWrap.classList.toggle("d-none", view !== "table");
+  if (toggleBtn) toggleBtn.textContent = view === "table" ? "Ver cards" : "Ver tabela";
 }
 
 function setActionButtons(enabled) {
@@ -686,6 +880,7 @@ function setActionButtons(enabled) {
     "rrBtn",
     "copyBtn",
     "shareBtn",
+    "toggleViewBtn",
     "shareTextBtn",
     "shareResultPngBtn",
     "shareBracketPngBtn",
@@ -707,7 +902,7 @@ async function copyResult() {
   try {
     await navigator.clipboard.writeText(text);
   } catch {
-    showError("Nao foi possivel copiar. Verifique as permissoes do navegador.");
+    showError("N\u00e3o foi poss\u00edvel copiar. Verifique as permiss\u00f5es do navegador.");
   }
 }
 
@@ -733,7 +928,7 @@ async function exportPng() {
   if (!lastDraw) return;
   const target = document.getElementById("shareCapture");
   if (!target || typeof html2canvas === "undefined") {
-    showError("PNG indisponivel no momento.");
+    showError("PNG indispon\u00edvel no momento.");
     return;
   }
   try {
@@ -787,14 +982,15 @@ async function shareLink() {
   clearError();
   try {
     const meta = lastDraw.meta || {};
-    const balanceLabel = meta.balance_mode === "tiers" ? "tiers A/B/C/D" : "aleatorio";
-    const repeatLabel = meta.avoid_repeat ? `sem repeticao (${meta.avoid_repeat_window || 1})` : "repeticao liberada";
+    const label = lastDraw.dataset === "nba" ? "NBA 2K" : "EA FC";
+    const balanceLabel = meta.balance_mode === "tiers" ? "tiers A/B/C/D" : "aleat\u00f3rio";
+    const repeatLabel = meta.avoid_repeat ? `sem repeti\u00e7\u00e3o (${meta.avoid_repeat_window || 1})` : "repeti\u00e7\u00e3o liberada";
     const lines = (lastDraw.draw || []).map((row) => {
       const label = categoryLabel(row.team_type, row.gender);
       return `${row.participant} - ${row.team_name} (${label})`;
     });
     const text = [
-      "Sorteio de Times - EA FC",
+      `Sorteio de Times - ${label}`,
       `Data: ${meta.timestamp ? new Date(meta.timestamp).toLocaleString() : new Date().toLocaleString()}`,
       `Seed: ${meta.seed || "N/A"} | Balanceamento: ${balanceLabel} | ${repeatLabel}`,
       "",
@@ -802,7 +998,7 @@ async function shareLink() {
     ].join("\n");
     await navigator.clipboard.writeText(text);
   } catch {
-    showError("Nao foi possivel copiar o texto.");
+    showError("N\u00e3o foi poss\u00edvel copiar o texto.");
   }
 }
 
@@ -810,7 +1006,7 @@ async function exportResultPng() {
   if (!lastDraw) return;
   const target = document.getElementById("step-sorteio");
   if (!target || typeof html2canvas === "undefined") {
-    showError("PNG indisponivel no momento.");
+    showError("PNG indispon\u00edvel no momento.");
     return;
   }
   try {
@@ -834,7 +1030,7 @@ async function exportResultPng() {
 async function exportBracketPng() {
   const target = document.getElementById("step-chaveamento");
   if (!target || typeof html2canvas === "undefined") {
-    showError("PNG indisponivel no momento.");
+    showError("PNG indispon?vel no momento.");
     return;
   }
   try {
@@ -901,6 +1097,33 @@ function setupReveal() {
   });
 }
 
+function applyThemeMode(mode) {
+  const body = document.body;
+  if (!body) return;
+  body.classList.toggle("theme-dark", mode === "dark");
+  const btn = document.getElementById("themeToggleBtn");
+  if (btn) btn.textContent = mode === "dark" ? "Tema claro" : "Tema escuro";
+}
+
+function applyTvMode(enabled) {
+  const body = document.body;
+  if (!body) return;
+  body.classList.toggle("tv-mode", enabled);
+  const btn = document.getElementById("tvToggleBtn");
+  if (btn) btn.textContent = enabled ? "Sair do TV" : "Modo TV";
+  if (enabled) setActiveTab("sorteio");
+}
+
+function updateRoomStatus(code) {
+  const status = document.getElementById("roomStatus");
+  if (!status) return;
+  status.textContent = code ? `Sala local: ${code}` : "";
+}
+
+function generateRoomCode() {
+  return Math.random().toString(36).slice(2, 6).toUpperCase();
+}
+
 const participantInput = document.getElementById("participantInput");
 const addParticipantBtn = document.getElementById("addParticipantBtn");
 if (addParticipantBtn && participantInput) {
@@ -931,20 +1154,59 @@ if (importBtn) {
       .split(/\r?\n/)
       .map((s) => normalizeName(s))
       .filter(Boolean);
+    const before = participants.length;
+    const unique = new Set();
     lines.forEach((name) => {
-      const exists = participants.some((p) => p.toLowerCase() === name.toLowerCase());
+      const key = name.toLowerCase();
+      if (unique.has(key)) return;
+      unique.add(key);
+      const exists = participants.some((p) => p.toLowerCase() === key);
       if (!exists) participants.push(name);
     });
+    const added = participants.length - before;
+    const dupes = lines.length - unique.size;
+    const feedback = document.getElementById("bulkFeedback");
+    if (feedback) {
+      feedback.textContent = `${lines.length} nomes detectados \u00b7 ${dupes} duplicados removidos \u00b7 ${added} adicionados`;
+    }
     bulk.value = "";
     renderParticipants();
   });
 }
 
+const liveModeToggle = document.getElementById("liveModeToggle");
+if (liveModeToggle) {
+  liveModeToggle.checked = getStorageBool("liveMode", false);
+  liveModeToggle.addEventListener("change", () => {
+    setStorageBool("liveMode", liveModeToggle.checked);
+  });
+}
+
+const bulkInput = document.getElementById("bulkInput");
+if (bulkInput) {
+  bulkInput.addEventListener("input", () => {
+    updateBulkFeedback(bulkInput.value);
+  });
+}
+
+document.addEventListener("keydown", (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() == "v") {
+    if (participants.length === 0) {
+      const details = document.getElementById("pasteDetails");
+      const bulk = document.getElementById("bulkInput");
+      if (details && bulk) {
+        details.open = true;
+        bulk.focus();
+      }
+    }
+  }
+});
+
 const pasteBtn = document.getElementById("pasteBtn");
 if (pasteBtn) {
   pasteBtn.addEventListener("click", async () => {
     if (!navigator.clipboard?.readText) {
-      showError("Clipboard indisponivel no navegador.");
+      showError("Clipboard indispon\u00edvel no navegador.");
       return;
     }
     try {
@@ -959,7 +1221,7 @@ if (pasteBtn) {
       });
       renderParticipants();
     } catch {
-      showError("Nao foi possivel acessar o clipboard.");
+      showError("Não foi possível acessar o clipboard.");
     }
   });
 }
@@ -1029,6 +1291,7 @@ const presetSelect = document.getElementById("presetSelect");
 if (presetSelect) {
   presetSelect.addEventListener("change", (e) => {
     applyPreset(e.target.value);
+    toggleTopN();
   });
 }
 
@@ -1037,6 +1300,14 @@ if (seedBtn) {
   seedBtn.addEventListener("click", () => {
     const seedInput = document.getElementById("seedInput");
     if (seedInput) seedInput.value = generateSeed();
+  });
+}
+
+const modeSelect = document.getElementById("modeSelect");
+if (modeSelect) {
+  modeSelect.addEventListener("change", () => {
+    toggleTopN();
+    syncModeCategory();
   });
 }
 
@@ -1051,7 +1322,8 @@ const drawBtn = document.getElementById("drawBtn");
 if (drawBtn) {
   drawBtn.addEventListener("click", async () => {
     clearError();
-    const mode = document.getElementById("modeSelect").value;
+    const modeSelection = document.getElementById("modeSelect").value;
+    const mode = modeSelection === "top" ? "top" : "all";
     const topN = parseInt(document.getElementById("topNInput").value || "10", 10);
     const category = document.getElementById("categorySelect").value;
     const balanceMode = document.getElementById("balanceSelect")?.value || "random";
@@ -1107,44 +1379,12 @@ if (drawBtn) {
       const history = JSON.parse(localStorage.getItem("lastDrawTeamsHistory") || "[]");
       history.unshift(used);
       localStorage.setItem("lastDrawTeamsHistory", JSON.stringify(history.slice(0, 3)));
-      setActionButtons(true);
-
-      const cards = document.getElementById("resultCards");
-      if (cards) {
-        cards.innerHTML = "";
-        j.draw.forEach((row) => {
-          const label = categoryLabel(row.team_type, row.gender);
-          const card = document.createElement("div");
-          card.className = "result-card";
-          card.innerHTML = `
-            <div class="player">${row.participant}</div>
-            <div class="team">${row.team_name}</div>
-            <div class="muted small">${label}</div>
-            <div class="result-badges">
-              <span class="badge-pill">OVR ${row.overall}</span>
-              <span class="badge-pill">ATT ${row.attack}</span>
-              <span class="badge-pill">MID ${row.midfield}</span>
-              <span class="badge-pill">DEF ${row.defence}</span>
-            </div>
-          `;
-          cards.appendChild(card);
-        });
-      }
-
+      renderResults(j, seedValue);
       buildBracket(j.draw);
-      const resultMeta = document.getElementById("resultMeta");
-      if (resultMeta) {
-        const meta = j.meta || {};
-        const when = meta.timestamp ? new Date(meta.timestamp).toLocaleString() : "";
-        const seedLabel = meta.seed === "auto" ? seedValue : meta.seed || seedValue;
-        const balanceLabel = meta.balance_mode === "tiers" ? "tiers A/B/C/D" : "aleatorio";
-        const repeatLabel = meta.avoid_repeat ? `sem repeticao (${meta.avoid_repeat_window || 1})` : "repeticao liberada";
-        resultMeta.textContent = `Seed: ${seedLabel} | ${when} | Balanceamento: ${balanceLabel} | ${repeatLabel}`;
-      }
       setActiveTab("sorteio");
 
     } catch (e) {
-      showError("Falha de comunicacao com o servidor.");
+      showError("Falha de comunicação com o servidor.");
     }
   });
 }
@@ -1164,7 +1404,7 @@ if (rrBtn) rrBtn.addEventListener("click", () => {
 });
 
 const copyBtn = document.getElementById("copyBtn");
-if (copyBtn) copyBtn.addEventListener("click", copyResult);
+if (copyBtn) copyBtn.addEventListener("click", shareLink);
 
 const csvBtn = document.getElementById("csvBtn");
 if (csvBtn) csvBtn.addEventListener("click", exportCsv);
@@ -1176,7 +1416,14 @@ const exportBtn = document.getElementById("exportBtn");
 if (exportBtn) exportBtn.addEventListener("click", exportXlsx);
 
 const shareBtn = document.getElementById("shareBtn");
-if (shareBtn) shareBtn.addEventListener("click", shareLink);
+if (shareBtn) shareBtn.addEventListener("click", copyResult);
+
+const toggleViewBtn = document.getElementById("toggleViewBtn");
+if (toggleViewBtn) {
+  toggleViewBtn.addEventListener("click", () => {
+    setResultView(resultView === "table" ? "cards" : "table");
+  });
+}
 
 const shareTextBtn = document.getElementById("shareTextBtn");
 if (shareTextBtn) shareTextBtn.addEventListener("click", shareLink);
@@ -1186,6 +1433,53 @@ if (shareResultPngBtn) shareResultPngBtn.addEventListener("click", exportResultP
 
 const shareBracketPngBtn = document.getElementById("shareBracketPngBtn");
 if (shareBracketPngBtn) shareBracketPngBtn.addEventListener("click", exportBracketPng);
+
+const createRoomBtn = document.getElementById("createRoomBtn");
+const joinRoomBtn = document.getElementById("joinRoomBtn");
+const themeToggleBtn = document.getElementById("themeToggleBtn");
+const tvToggleBtn = document.getElementById("tvToggleBtn");
+
+if (createRoomBtn) {
+  createRoomBtn.addEventListener("click", () => {
+    const code = generateRoomCode();
+    localStorage.setItem("roomCode", code);
+    updateRoomStatus(code);
+  });
+}
+
+if (joinRoomBtn) {
+  joinRoomBtn.addEventListener("click", () => {
+    const code = prompt("Digite o c\u00f3digo da sala");
+    if (!code) return;
+    localStorage.setItem("roomCode", code.trim().toUpperCase());
+    updateRoomStatus(code.trim().toUpperCase());
+  });
+}
+
+if (themeToggleBtn) {
+  const saved = localStorage.getItem("themeMode") || "light";
+  applyThemeMode(saved);
+  themeToggleBtn.addEventListener("click", () => {
+    const next = document.body.classList.contains("theme-dark") ? "light" : "dark";
+    localStorage.setItem("themeMode", next);
+    applyThemeMode(next);
+  });
+} else {
+  const saved = localStorage.getItem("themeMode") || "light";
+  applyThemeMode(saved);
+}
+
+if (tvToggleBtn) {
+  const saved = getStorageBool("tvMode", false);
+  applyTvMode(saved);
+  tvToggleBtn.addEventListener("click", () => {
+    const next = !document.body.classList.contains("tv-mode");
+    setStorageBool("tvMode", next);
+    applyTvMode(next);
+  });
+}
+
+updateRoomStatus(localStorage.getItem("roomCode") || "");
 
 const swapHomeBtn = document.getElementById("swapHomeBtn");
 if (swapHomeBtn) swapHomeBtn.addEventListener("click", swapHomeAway);
@@ -1198,5 +1492,5 @@ renderBracket();
 setupProLinks();
 setupReveal();
 setTheme("champions");
-applyPreset("quick");
+applyPreset(presetSelect?.value || "champions");
 setActiveTab("jogadores");
