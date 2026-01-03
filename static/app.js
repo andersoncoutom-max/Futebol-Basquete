@@ -28,22 +28,22 @@ const themeButtons = document.querySelectorAll("[data-theme]");
 
 const themeCopy = {
   champions: {
-    kicker: "Sorteio de Times para EA FC",
-    title: "Noite de Champions",
-    subtitle: "Organize confrontos grandes e sorteie times de forma r\u00e1pida."
+    kicker: "Sorteio de Times para EA FC e NBA 2K",
+    title: "Sorteio r\u00e1pido",
+    subtitle: "Monte os jogadores e gere confrontos em segundos."
   },
   libertadores: {
-    kicker: "Sorteio de Times para EA FC",
+    kicker: "Sorteio de Times para EA FC e NBA 2K",
     title: "Ritmo de Libertadores",
     subtitle: "Monte a lista e gere chaveamentos com clima de decis\u00e3o."
   },
   selecoes: {
-    kicker: "Sorteio de Times para EA FC",
-    title: "Noite de Sele\u00e7\u00f5es",
+    kicker: "Sorteio de Times para EA FC e NBA 2K",
+    title: "Sele\u00e7\u00f5es em foco",
     subtitle: "Sorteie sele\u00e7\u00f5es e mantenha o equil\u00edbrio entre os jogadores."
   },
   classicos: {
-    kicker: "Sorteio de Times para EA FC",
+    kicker: "Sorteio de Times para EA FC e NBA 2K",
     title: "Cl\u00e1ssicos e rivalidades",
     subtitle: "R\u00e1pido para montar elencos e dividir os times."
   }
