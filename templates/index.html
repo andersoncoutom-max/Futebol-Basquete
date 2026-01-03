@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Sorteio Pro</title>
+  <title>Draft Play</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
@@ -116,47 +116,6 @@
 
     body.theme-dark::before { opacity: 0.08; }
 
-    body.theme-dark .hero {
-      background:
-        radial-gradient(600px 240px at 10% 0%, rgba(22, 195, 181, 0.12), transparent 60%),
-        radial-gradient(600px 240px at 90% 0%, rgba(24, 178, 107, 0.1), transparent 60%),
-        linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.88));
-    }
-
-    body.theme-dark .tab-btn {
-      border-color: rgba(148, 163, 184, 0.25);
-      background: rgba(15, 23, 42, 0.7);
-      color: rgba(226, 232, 240, 0.8);
-    }
-
-    body.theme-dark .tab-btn.active {
-      background: rgba(15, 23, 42, 0.92);
-      border-color: rgba(148, 163, 184, 0.35);
-      color: #f8fafc;
-    }
-
-    body.theme-dark .btn-ghost {
-      background: rgba(15, 23, 42, 0.7);
-      color: var(--ink);
-    }
-
-    body.theme-dark .chip {
-      background: rgba(15, 23, 42, 0.85);
-      border-color: rgba(148, 163, 184, 0.22);
-    }
-
-    body.theme-dark .result-card {
-      background: linear-gradient(135deg, var(--badge-soft, rgba(15, 23, 42, 0.2)), rgba(15, 23, 42, 0.92));
-      border-color: rgba(148, 163, 184, 0.2);
-    }
-
-    body.theme-dark .benefit-pill {
-      background: rgba(15, 23, 42, 0.8);
-      border-color: rgba(148, 163, 184, 0.2);
-    }
-
-    body.theme-dark .table { color: var(--ink); }
-
     .shell {
       max-width: 1180px;
       margin: 0 auto;
@@ -211,17 +170,7 @@
 
     .brand-sub { color: rgba(255, 255, 255, 0.72); font-size: 0.9rem; }
 
-    .topbar-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .room-status {
-      padding-left: 6px;
-      font-size: 0.78rem;
-      color: rgba(255, 255, 255, 0.7);
-    }
+    .topbar-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
     .btn-ghost {
       border: 1px solid rgba(12, 27, 51, 0.16);
@@ -261,62 +210,10 @@
       margin-bottom: 6px;
     }
 
-    .hero-actions {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-top: 10px;
-    }
-
-    .hero-actions .btn {
-      min-width: 160px;
-    }
-
-    .benefits-row { display: none; }
+    .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
+    .hero-actions .btn { min-width: 160px; }
 
     .muted { color: var(--muted); }
-
-    .hero-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 12px;
-      margin-top: 8px;
-    }
-
-    .hero-card {
-      border-radius: 16px;
-      padding: 12px 14px;
-      border: 1px solid rgba(12, 27, 51, 0.1);
-      background: rgba(255, 255, 255, 0.88);
-      display: grid;
-      gap: 6px;
-      box-shadow: 0 12px 24px rgba(11, 31, 42, 0.08);
-      transform: translateY(8px);
-      opacity: 0;
-      animation: cardIn 0.6s ease forwards;
-    }
-
-    .hero-card:nth-child(2) { animation-delay: 0.08s; }
-    .hero-card:nth-child(3) { animation-delay: 0.16s; }
-    .hero-card:nth-child(4) { animation-delay: 0.24s; }
-
-    @keyframes cardIn {
-      to { transform: translateY(0); opacity: 1; }
-    }
-
-    .hero-icon {
-      width: 30px;
-      height: 30px;
-      border-radius: 12px;
-      display: grid;
-      place-items: center;
-      background: linear-gradient(135deg, rgba(22, 195, 181, 0.2), rgba(24, 178, 107, 0.2));
-      color: #0b1f2a;
-      font-weight: 800;
-      font-size: 0.82rem;
-    }
-
-    .hero-card strong { font-size: 0.95rem; }
 
     .dataset-tabs {
       display: inline-flex;
@@ -341,398 +238,75 @@
       border: 1px solid rgba(22, 195, 181, 0.35);
     }
 
-    .tabs { display: none; }
-
-    .tab-btn {
-      border: 1px solid rgba(11, 31, 42, 0.12);
-      background: rgba(255, 255, 255, 0.9);
-      color: rgba(12, 27, 51, 0.9);
-      font-weight: 700;
-      padding: 6px 10px;
-      border-radius: 12px;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      opacity: 0.85;
-    }
-
-    .tab-btn .tab-step {
-      display: inline-grid;
-      place-items: center;
-      width: 24px;
-      height: 24px;
-      border-radius: 999px;
-      margin-right: 8px;
-      background: rgba(255, 255, 255, 0.16);
-      font-size: 0.78rem;
-    }
-
-    .tab-btn.active {
-      background: rgba(22, 195, 181, 0.15);
-      border: 1px solid rgba(22, 195, 181, 0.45);
-      color: var(--ink);
-      box-shadow: none;
-      opacity: 1;
-    }
-
-    .tab-btn.disabled,
-    .tab-btn[disabled] {
-      opacity: 0.4;
-      pointer-events: none;
-    }
-
-    .tab-panels {
-      margin-top: 12px;
-      display: grid;
-      gap: 14px;
-    }
-
+    .tab-panels { margin-top: 12px; display: grid; gap: 14px; }
     .tab-panel { display: block; }
+    .post-draw.d-none { display: none !important; }
 
-    .layout {
-      display: grid;
-      gap: 16px;
-      grid-template-columns: 0.9fr 1.1fr;
-    }
-
-    .layout.single { grid-template-columns: 1fr; }
-
-    .stack { display: grid; gap: 14px; }
-
-    .section-title {
-      font-weight: 700;
-      font-size: 0.98rem;
-    }
-
-    .count-pill {
-      padding: 6px 12px;
-      background: rgba(22, 195, 181, 0.2);
-      border: 1px solid rgba(22, 195, 181, 0.35);
-      color: #0b1f2a;
-      font-weight: 700;
-    }
-
-    .form-label { font-weight: 600; }
-
-    .form-control,
-    .form-select,
-    textarea {
-      background: rgba(248, 250, 252, 0.9);
-      border: 1px solid var(--stroke);
-      color: var(--ink);
-    }
-
-    .form-control:focus,
-    .form-select:focus,
-    textarea:focus {
-      border-color: rgba(14, 165, 233, 0.7);
-      box-shadow: 0 0 0 0.2rem rgba(14, 165, 233, 0.2);
-    }
-
-    .chip-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 14px;
-    }
-
+    .chip-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
     .chip {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 6px 12px;
+      gap: 6px;
+      padding: 6px 10px;
       border-radius: 999px;
       border: 1px solid var(--stroke);
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.82);
       font-weight: 600;
     }
+    .chip .remove { cursor: pointer; opacity: 0.6; }
+    .chip:hover .remove { opacity: 1; }
 
-    .chip-remove {
-      border: none;
-      background: rgba(12, 27, 51, 0.08);
-      color: var(--ink);
-      border-radius: 999px;
-      width: 22px;
-      height: 22px;
-      line-height: 20px;
-      font-weight: 700;
-      opacity: 0;
-      transition: opacity 0.2s ease;
-    }
-
-    .chip:hover .chip-remove {
-      opacity: 1;
-    }
-
-    .chip-remove:focus-visible {
-      opacity: 1;
-      outline: 2px solid rgba(22, 195, 181, 0.45);
-      outline-offset: 2px;
-    }
-
-    .empty-state {
-      width: 100%;
-      padding: 12px 14px;
-      border-radius: 12px;
-      border: 1px dashed rgba(12, 27, 51, 0.2);
-      background: rgba(255, 255, 255, 0.7);
-    }
+    .card-line { border-top: 1px dashed rgba(12, 27, 51, 0.14); margin: 12px 0; }
 
     .result-grid {
       display: grid;
-      gap: 12px;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      margin-top: 14px;
+      gap: 12px;
+      margin-top: 10px;
     }
 
     .result-card {
       border-radius: 16px;
-      padding: 12px;
-      border: 1px solid rgba(12, 27, 51, 0.12);
-      background: linear-gradient(135deg, var(--badge-soft, rgba(255, 255, 255, 0.7)), rgba(255, 255, 255, 0.96));
+      padding: 12px 14px;
+      border: 1px solid rgba(12, 27, 51, 0.1);
+      background: rgba(255, 255, 255, 0.92);
       display: grid;
       gap: 6px;
       box-shadow: 0 12px 24px rgba(11, 31, 42, 0.08);
+      transform: translateY(8px);
+      opacity: 0;
+      animation: cardIn 0.6s ease forwards;
     }
 
-    .result-head {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+    .result-card .player { font-weight: 700; font-size: 1.05rem; }
+    .result-card .team { font-weight: 600; }
+    .result-card .muted { font-size: 0.9rem; }
 
     .team-badge {
-      width: 42px;
-      height: 42px;
-      border-radius: 14px;
-      background: var(--badge, linear-gradient(135deg, var(--accent), var(--accent-2)));
-      color: #0b1320;
-      font-weight: 800;
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
       display: grid;
       place-items: center;
-      font-size: 0.85rem;
-      letter-spacing: 0.04em;
-      box-shadow: 0 10px 18px rgba(15, 23, 42, 0.12);
+      color: #0b1f2a;
+      font-weight: 800;
+      font-size: 0.9rem;
+      background: linear-gradient(135deg, rgba(22, 195, 181, 0.2), rgba(24, 178, 107, 0.2));
     }
 
-    .result-card .player {
-      font-weight: 700;
-      font-size: 1rem;
-    }
+    body.theme-dark .team-badge { color: #fff; }
 
-    .result-card .team {
-      font-weight: 600;
-    }
+    body.theme-dark .result-card { background: linear-gradient(135deg, var(--badge-soft, rgba(15, 23, 42, 0.2)), rgba(15, 23, 42, 0.92)); border-color: rgba(148, 163, 184, 0.2); }
 
-    .result-badges {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .badge-pill {
-      border-radius: 999px;
-      padding: 4px 10px;
-      font-size: 0.78rem;
-      border: 1px solid rgba(12, 27, 51, 0.12);
-      background: rgba(15, 23, 42, 0.06);
-    }
-
-    .result-card.live-reveal {
-      opacity: 0;
-      transform: translateY(6px) scale(0.98);
-    }
-
-    .result-card.live-reveal.is-visible {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-      transition: opacity 0.45s ease, transform 0.45s ease;
-    }
-
-    .table thead th { font-weight: 600; }
-
-    .table-striped > tbody > tr:nth-of-type(odd) > * {
-      background-color: rgba(13, 21, 38, 0.04);
-    }
-
-    .action-row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    .action-row .btn { min-width: 140px; }
-
-    .action-row.compact .btn {
-      min-width: auto;
-      padding: 6px 12px;
-      font-size: 0.86rem;
-    }
-
-    .alert-danger {
-      background: rgba(255, 71, 87, 0.12);
-      color: #7f1d1d;
-      border-color: rgba(255, 71, 87, 0.3);
-    }
-
-    .bracket-wrap {
-      position: relative;
-      overflow-x: auto;
-      padding-bottom: 8px;
-    }
-
-    .bracket-grid {
-      position: relative;
-      display: grid;
-      grid-auto-flow: column;
-      grid-auto-columns: minmax(220px, 1fr);
-      gap: 18px;
-      z-index: 2;
-    }
-
-    .bracket-lines {
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-      pointer-events: none;
-    }
-
-    .bracket-column { display: grid; gap: 12px; }
-
-    .bracket-round-title {
-      font-weight: 700;
-      font-size: 0.92rem;
-    }
-
-    .bracket-match {
-      position: relative;
-      padding: 12px;
-      border-radius: 16px;
-      background: linear-gradient(180deg, #0f172a, #111827);
-      color: #f8fafc;
-      border: 1px solid rgba(248, 250, 252, 0.18);
-      display: grid;
-      gap: 8px;
-    }
-
-    .match-btn {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(248, 250, 252, 0.18);
-      color: #f8fafc;
-      padding: 8px 10px;
-      border-radius: 12px;
-      text-align: left;
-      font-size: 0.88rem;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .match-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.25);
-    }
-
-    .match-btn.winner {
-      border-color: rgba(34, 197, 94, 0.9);
-      background: rgba(34, 197, 94, 0.18);
-    }
-
-    .match-header {
-      font-weight: 700;
-      font-size: 0.82rem;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: rgba(248, 250, 252, 0.7);
-    }
-
-    .match-vs {
-      text-align: center;
-      font-size: 0.78rem;
-      letter-spacing: 0.2em;
-      color: rgba(248, 250, 252, 0.6);
-    }
-
-    .match-score {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 6px;
-    }
-
-    .match-score input {
-      width: 46px;
-      padding: 4px 6px;
-      border-radius: 8px;
-      border: 1px solid rgba(248, 250, 252, 0.2);
-      background: rgba(15, 23, 42, 0.3);
-      color: #f8fafc;
-      text-align: center;
-    }
-
-    .match-score button {
-      border-radius: 10px;
-      border: 1px solid rgba(248, 250, 252, 0.2);
-      background: rgba(15, 23, 42, 0.4);
-      color: #f8fafc;
-      padding: 4px 8px;
-      font-size: 0.78rem;
-    }
-
-    .match-meta {
-      font-size: 0.78rem;
-      color: rgba(248, 250, 252, 0.7);
-    }
-
-    .reveal {
-      opacity: 0;
-      transform: translateY(16px);
-      transition: opacity 0.6s ease, transform 0.6s ease;
-    }
-
-    .reveal.is-visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .pulse {
-      animation: pulse 1.8s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { box-shadow: 0 0 0 rgba(22, 195, 181, 0); }
-      50% { box-shadow: 0 0 0 8px rgba(22, 195, 181, 0.18); }
-    }
-
-    body.tv-mode .hero,
-    body.tv-mode .tabs,
-    body.tv-mode #step-jogadores,
-    body.tv-mode #step-opcoes,
-    body.tv-mode #step-compartilhar,
-    body.tv-mode .benefits-row {
-      display: none !important;
-    }
-
-    body.tv-mode .tab-panel { display: none !important; }
-
-    body.tv-mode #step-sorteio,
-    body.tv-mode #step-chaveamento { display: block !important; }
-
-    body.tv-mode .topbar-actions .btn:not(#tvToggleBtn),
-    body.tv-mode .room-status { display: none; }
-
-    body.tv-mode .shell { max-width: 1400px; padding-top: 16px; }
-
-    body.tv-mode .section-title { font-size: 1.2rem; }
-
-    body.tv-mode .result-card { font-size: 1.05rem; }
+    .action-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .action-row.compact .btn { padding: 6px 10px; font-size: 0.9rem; }
 
     @media (max-width: 720px) {
       .topbar-actions { width: 100%; }
       .hero-actions .btn { width: 100%; }
-      .tab-btn { font-size: 0.82rem; padding: 6px 10px; }
-      .tab-btn .tab-step { width: 20px; height: 20px; }
       .action-row .btn { width: 100%; }
       .result-grid { grid-template-columns: 1fr; }
     }
-
     @media (max-width: 992px) {
       .layout { grid-template-columns: 1fr; }
       .topbar { flex-direction: column; align-items: flex-start; }
@@ -743,18 +317,14 @@
   <div class="shell">
     <header class="topbar glass reveal">
       <div class="brand">
-        <div class="brand-logo">SP</div>
+        <div class="brand-logo">DP</div>
         <div>
-          <div class="brand-title">Sorteio Pro</div>
-          <div class="brand-sub">Sorteios e torneios em minutos</div>
+          <div class="brand-title">Draft Play</div>
+          <div class="brand-sub">Times e confrontos na hora</div>
         </div>
       </div>
       <div class="topbar-actions">
-        <button id="createRoomBtn" class="btn btn-accent btn-sm">Criar sala</button>
-        <button id="joinRoomBtn" class="btn btn-ghost btn-sm">Entrar com código</button>
         <button id="themeToggleBtn" class="btn btn-ghost btn-sm">Tema escuro</button>
-        <button id="tvToggleBtn" class="btn btn-ghost btn-sm">Modo TV</button>
-        <span class="room-status muted small" id="roomStatus"></span>
       </div>
     </header>
 
@@ -765,27 +335,8 @@
         <p class="muted mb-0" id="heroSubtitle">Monte os jogadores, sorteie times justos e gere confrontos em segundos.</p>
         <div class="hero-actions">
           <a class="btn btn-accent" href="#step-jogadores">Começar</a>
-          <a class="btn btn-ghost" href="#step-sorteio">Ver sorteio</a>
         </div>
       </div>
-    </section>
-
-    <section class="tabs glass reveal">
-      <button class="tab-btn active" data-tab-target="jogadores">
-        <span class="tab-step">1</span>Jogadores
-      </button>
-      <button class="tab-btn" data-tab-target="opcoes">
-        <span class="tab-step">2</span>Opções
-      </button>
-      <button class="tab-btn disabled" data-tab-target="sorteio">
-        <span class="tab-step">3</span>Sorteio
-      </button>
-      <button class="tab-btn disabled" data-tab-target="chaveamento">
-        <span class="tab-step">4</span>Chaveamento
-      </button>
-      <button class="tab-btn disabled" data-tab-target="compartilhar">
-        <span class="tab-step">5</span>Compartilhar
-      </button>
     </section>
 
     <section id="config" class="tab-panels">
@@ -827,48 +378,44 @@
                 <button class="dataset-tab" id="datasetNbaBtn" data-dataset="nba">NBA 2K25</button>
               </div>
               <div class="row g-2 align-items-end mt-3">
-                <div class="col-md-6">
+                <div class="col-md-7">
+                  <label class="form-label">Sala local</label>
+                  <div class="input-group">
+                    <input id="roomCodeInput" class="form-control" placeholder="Ex.: F3K9" />
+                    <button id="roomCreateBtn" class="btn btn-ghost" type="button">Gerar</button>
+                    <button id="roomJoinBtn" class="btn btn-ghost" type="button">Usar código</button>
+                  </div>
+                  <div class="muted small" id="roomStatus"></div>
+                </div>
+                <div class="col-md-5">
                   <label class="form-label">Preset visual</label>
-                  <select id="presetSelect" class="form-select">
-                    <option value="champions">Padr&atilde;o r&aacute;pido</option>
-                    <option value="playoffs">Playoffs NBA</option>
-                    <option value="selecoes">Seleções</option>
-                    <option value="classicos">Clássicos</option>
+                  <select id="presetSelect" class="form-select"></select>
+                </div>
+              </div>
+              <div class="row g-2 align-items-end mt-3">
+                <div class="col-md-6">
+                  <label class="form-label">Força dos times</label>
+                  <select id="balanceSelect" class="form-select">
+                    <option value="overall">Balanceado (overall)</option>
+                    <option value="matchup">Equilibrar confrontos</option>
+                    <option value="random">Aleatório</option>
                   </select>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">Balanceamento</label>
-                  <select id="balanceSelect" class="form-select">
-                    <option value="random">Aleatório</option>
-                  <option value="tiers">Por tiers (A/B/C/D)</option>
-                </select>
-              </div>
-            </div>
-            <div class="row g-2 align-items-end mt-2">
-              <div class="col-md-6">
-                <div class="form-check mt-4">
-                  <input class="form-check-input" type="checkbox" id="avoidRepeatToggle">
-                  <label class="form-check-label" for="avoidRepeatToggle">Evitar repetir time do último sorteio</label>
-                </div>
-                <div class="form-check mt-2">
-                  <input class="form-check-input" type="checkbox" id="avoidRepeat3Toggle">
-                  <label class="form-check-label" for="avoidRepeat3Toggle">Evitar repetir nas últimas 3 rodadas</label>
-                </div>
-                <div class="form-check mt-2">
-                  <input class="form-check-input" type="checkbox" id="liveModeToggle">
-                  <label class="form-check-label" for="liveModeToggle">Modo ao vivo (revelação)</label>
+                  <div class="form-check mt-4">
+                    <input class="form-check-input" type="checkbox" id="avoidRepeatToggle">
+                    <label class="form-check-label" for="avoidRepeatToggle">Evitar repetir do último sorteio</label>
+                  </div>
+                  <div class="form-check mt-2">
+                    <input class="form-check-input" type="checkbox" id="avoidRepeat3Toggle">
+                    <label class="form-check-label" for="avoidRepeat3Toggle">Evitar repetir nas últimas 3</label>
+                  </div>
+                  <div class="form-check mt-2">
+                    <input class="form-check-input" type="checkbox" id="liveModeToggle">
+                    <label class="form-check-label" for="liveModeToggle">Modo ao vivo (revelação)</label>
+                  </div>
                 </div>
               </div>
-              <div class="col-md-6">
-                <label class="form-label">Seed (transparência)</label>
-                <div class="input-group">
-                  <input id="seedInput" class="form-control" placeholder="Ex.: 9F3A" />
-                  <button id="seedBtn" class="btn btn-ghost" type="button">Gerar</button>
-                </div>
-              </div>
-            </div>
-            <details class="mt-3">
-              <summary class="muted small">Opções avançadas</summary>
               <div class="row g-2 align-items-end mt-2">
                 <div class="col-md-6">
                   <label class="form-label">Modo de times</label>
@@ -890,7 +437,6 @@
                   <select id="categorySelect" class="form-select"></select>
                 </div>
               </div>
-            </details>
             <div class="action-row mt-3">
               <button id="drawBtn" class="btn btn-success">Sortear times</button>
             </div>
@@ -899,10 +445,10 @@
         </div>
       </div>
 
-      <div class="tab-panel" data-tab="sorteio" id="step-sorteio">
+      <div class="tab-panel post-draw d-none" data-tab="sorteio" id="step-sorteio">
         <div class="layout single">
           <div class="glass p-3 reveal">
-            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between flex-wrap gap-2">
               <div class="section-title mb-0">Sorteio</div>
               <div class="action-row compact">
                 <button id="copyBtn" class="btn btn-ghost btn-sm" disabled>Copiar para WhatsApp</button>
@@ -916,9 +462,8 @@
               <table class="table table-striped align-middle">
                 <thead>
                   <tr>
-                    <th>Participante</th>
+                    <th>Jogador</th>
                     <th>Time</th>
-                    <th>Categoria</th>
                     <th>OVR</th>
                     <th>ATT</th>
                     <th>MID</th>
@@ -932,7 +477,7 @@
         </div>
       </div>
 
-      <div class="tab-panel" data-tab="chaveamento" id="step-chaveamento">
+      <div class="tab-panel post-draw d-none" data-tab="chaveamento" id="step-chaveamento">
         <div class="layout single">
           <div class="glass p-3 reveal">
             <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-2">
@@ -975,7 +520,7 @@
         </div>
       </div>
 
-      <div class="tab-panel" data-tab="compartilhar" id="step-compartilhar">
+      <div class="tab-panel post-draw d-none" data-tab="compartilhar" id="step-compartilhar">
         <div class="layout single">
           <div class="glass p-3 reveal">
             <div class="section-title">Compartilhar</div>
@@ -991,12 +536,6 @@
 
     </section>
 
-    <section class="benefits-row">
-      <div class="benefit-pill"><span>Sorteio rápido</span><span class="muted">em segundos</span></div>
-      <div class="benefit-pill"><span>Chaveamento</span><span class="muted">automático</span></div>
-      <div class="benefit-pill"><span>Compartilhar</span><span class="muted">WhatsApp/PNG</span></div>
-      <div class="benefit-pill"><span>Sem complicação</span><span class="muted">só o essencial</span></div>
-    </section>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>

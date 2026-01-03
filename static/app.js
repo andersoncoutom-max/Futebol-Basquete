@@ -16,10 +16,10 @@ const bracketState = {
 };
 
 const presets = {
-  champions: { theme: "champions", rules: { balance: "tiers", avoidRepeat: true } },
-  playoffs: { theme: "libertadores", rules: { balance: "random", avoidRepeat: true } },
-  selecoes: { theme: "selecoes", rules: { balance: "tiers", category: "national" } },
-  classicos: { theme: "classicos", rules: { balance: "random", category: "clubs" } }
+  champions: { theme: "champions", dataset: "fc25", rules: { balance: "overall", avoidRepeat: true, mode: "all" } },
+  selecoes: { theme: "selecoes", dataset: "fc25", rules: { balance: "matchup", category: "national", mode: "national" } },
+  classicos: { theme: "classicos", dataset: "fc25", rules: { balance: "overall", category: "clubs", mode: "clubs" } },
+  playoffs: { theme: "libertadores", dataset: "nba", rules: { balance: "overall", avoidRepeat: true, mode: "all" } }
 };
 
 const tabButtons = document.querySelectorAll("[data-tab-target]");
@@ -193,6 +193,7 @@ function applyPreset(name) {
 function renderResults(drawObj, seedFallback) {
   if (!drawObj) return;
   setActionButtons(true);
+  document.querySelectorAll(".post-draw").forEach((el) => el.classList.remove("d-none"));
   enableFutureTabs();
 
   const live = getLiveMode();
@@ -1326,18 +1327,28 @@ if (datasetNbaBtn) {
 }
 
 const presetSelect = document.getElementById("presetSelect");
+function fillPresetsForDataset(dataset) {
+  if (!presetSelect) return;
+  const options = [];
+  Object.entries(presets).forEach(([key, val]) => {
+    if (!val.dataset || val.dataset === dataset) {
+      options.push({ key, label: themeCopy[key]?.title || key });
+    }
+  });
+  presetSelect.innerHTML = "";
+  options.forEach((opt, idx) => {
+    const o = document.createElement("option");
+    o.value = opt.key;
+    o.textContent = opt.label;
+    presetSelect.appendChild(o);
+  });
+  presetSelect.value = options[0]?.key || "";
+  applyPreset(presetSelect.value);
+}
 if (presetSelect) {
   presetSelect.addEventListener("change", (e) => {
     applyPreset(e.target.value);
     toggleTopN();
-  });
-}
-
-const seedBtn = document.getElementById("seedBtn");
-if (seedBtn) {
-  seedBtn.addEventListener("click", () => {
-    const seedInput = document.getElementById("seedInput");
-    if (seedInput) seedInput.value = generateSeed();
   });
 }
 
@@ -1361,15 +1372,13 @@ if (drawBtn) {
   drawBtn.addEventListener("click", async () => {
     clearError();
     const modeSelection = document.getElementById("modeSelect").value;
-    const mode = modeSelection === "top" ? "top" : "all";
-    const topN = parseInt(document.getElementById("topNInput").value || "10", 10);
-    const category = document.getElementById("categorySelect").value;
-    const balanceMode = document.getElementById("balanceSelect")?.value || "random";
-    const avoidRepeat = Boolean(document.getElementById("avoidRepeatToggle")?.checked);
-    const avoidRepeat3 = Boolean(document.getElementById("avoidRepeat3Toggle")?.checked);
-    const seedInput = document.getElementById("seedInput");
-    const seedValue = seedInput?.value?.trim() || generateSeed();
-    if (seedInput) seedInput.value = seedValue;
+  const mode = modeSelection === "top" ? "top" : "all";
+  const topN = parseInt(document.getElementById("topNInput").value || "10", 10);
+  const category = document.getElementById("categorySelect").value;
+  const balanceMode = document.getElementById("balanceSelect")?.value || "overall";
+  const avoidRepeat = Boolean(document.getElementById("avoidRepeatToggle")?.checked);
+  const avoidRepeat3 = Boolean(document.getElementById("avoidRepeat3Toggle")?.checked);
+  const seedValue = generateSeed();
 
     if (participants.length === 0) {
       showError("Adicione ao menos 1 participante.");
@@ -1528,6 +1537,7 @@ if (swapHomeBtn) swapHomeBtn.addEventListener("click", swapHomeAway);
 window.addEventListener("resize", drawBracketLines);
 
 setDataset("fc25");
+fillPresetsForDataset("fc25");
 renderParticipants();
 renderBracket();
 setupProLinks();
