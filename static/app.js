@@ -58,6 +58,20 @@ function setActiveTab(tabId) {
   tabPanels.forEach((panel) => {
     panel.classList.toggle("active", panel.getAttribute("data-tab") === tabId);
   });
+
+  const lock = tabId === "jogadores";
+  tabButtons.forEach((btn) => {
+    const target = btn.getAttribute("data-tab-target");
+    if (!target) return;
+    const keepEnabled = ["jogadores", "opcoes"].includes(target);
+    if (lock && !keepEnabled) {
+      btn.classList.add("disabled");
+      btn.setAttribute("disabled", "disabled");
+    } else if (!lock) {
+      btn.classList.remove("disabled");
+      btn.removeAttribute("disabled");
+    }
+  });
 }
 
 tabButtons.forEach((btn) => {
@@ -837,7 +851,7 @@ async function loadTeamsInfo() {
 function disableFutureTabs() {
   tabButtons.forEach((btn) => {
     const target = btn.getAttribute("data-tab-target");
-    if (target && target !== "jogadores") {
+    if (target && !["jogadores", "opcoes"].includes(target)) {
       btn.classList.add("disabled");
       btn.setAttribute("disabled", "disabled");
     }
