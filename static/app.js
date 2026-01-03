@@ -62,6 +62,7 @@ function setActiveTab(tabId) {
 
 tabButtons.forEach((btn) => {
   btn.addEventListener("click", () => {
+    if (btn.classList.contains("disabled") || btn.hasAttribute("disabled")) return;
     const target = btn.getAttribute("data-tab-target");
     if (target) setActiveTab(target);
   });
@@ -178,6 +179,7 @@ function applyPreset(name) {
 function renderResults(drawObj, seedFallback) {
   if (!drawObj) return;
   setActionButtons(true);
+  enableFutureTabs();
 
   const live = getLiveMode();
   const cards = document.getElementById("resultCards");
@@ -832,6 +834,23 @@ async function loadTeamsInfo() {
   }
 }
 
+function disableFutureTabs() {
+  tabButtons.forEach((btn) => {
+    const target = btn.getAttribute("data-tab-target");
+    if (target && target !== "jogadores") {
+      btn.classList.add("disabled");
+      btn.setAttribute("disabled", "disabled");
+    }
+  });
+}
+
+function enableFutureTabs() {
+  tabButtons.forEach((btn) => {
+    btn.classList.remove("disabled");
+    btn.removeAttribute("disabled");
+  });
+}
+
 function setDataset(dataset) {
   datasetState.current = dataset;
   const body = document.body;
@@ -1120,6 +1139,9 @@ function updateRoomStatus(code) {
   const status = document.getElementById("roomStatus");
   if (!status) return;
   status.textContent = code ? `Sala local: ${code}` : "";
+  if (code && navigator.clipboard) {
+    navigator.clipboard.writeText(code).catch(() => {});
+  }
 }
 
 function generateRoomCode() {
@@ -1446,6 +1468,7 @@ if (createRoomBtn) {
     const code = generateRoomCode();
     localStorage.setItem("roomCode", code);
     updateRoomStatus(code);
+    alert(`Sala criada: ${code}\\nUse este c\u00f3digo para compartilhar.`);
   });
 }
 
@@ -1455,6 +1478,7 @@ if (joinRoomBtn) {
     if (!code) return;
     localStorage.setItem("roomCode", code.trim().toUpperCase());
     updateRoomStatus(code.trim().toUpperCase());
+    alert(`Entrou na sala: ${code.trim().toUpperCase()}`);
   });
 }
 
@@ -1478,6 +1502,7 @@ if (tvToggleBtn) {
     const next = !document.body.classList.contains("tv-mode");
     setStorageBool("tvMode", next);
     applyTvMode(next);
+    if (next) setActiveTab("sorteio");
   });
 }
 
@@ -1496,3 +1521,4 @@ setupReveal();
 setTheme("champions");
 applyPreset(presetSelect?.value || "champions");
 setActiveTab("jogadores");
+disableFutureTabs();

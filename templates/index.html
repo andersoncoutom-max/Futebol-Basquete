@@ -404,6 +404,12 @@
       opacity: 1;
     }
 
+    .tab-btn.disabled,
+    .tab-btn[disabled] {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
     .tab-panels {
       margin-top: 16px;
       display: grid;
@@ -801,16 +807,16 @@
       <button class="tab-btn active" data-tab-target="jogadores">
         <span class="tab-step">1</span>Jogadores
       </button>
-      <button class="tab-btn" data-tab-target="regras">
+      <button class="tab-btn disabled" data-tab-target="regras">
         <span class="tab-step">2</span>Regras
       </button>
-      <button class="tab-btn" data-tab-target="sorteio">
+      <button class="tab-btn disabled" data-tab-target="sorteio">
         <span class="tab-step">3</span>Sorteio
       </button>
-      <button class="tab-btn" data-tab-target="chaveamento">
+      <button class="tab-btn disabled" data-tab-target="chaveamento">
         <span class="tab-step">4</span>Chaveamento
       </button>
-      <button class="tab-btn" data-tab-target="compartilhar">
+      <button class="tab-btn disabled" data-tab-target="compartilhar">
         <span class="tab-step">5</span>Compartilhar
       </button>
     </section>
