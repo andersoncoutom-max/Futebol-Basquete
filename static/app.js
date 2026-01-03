@@ -823,7 +823,9 @@ async function loadTeamsInfo() {
     const r = await fetch(`/api/teams_info?dataset=${datasetState.current}`);
     const j = await r.json();
     const el = document.getElementById("teamsInfo");
-    el.textContent = `Base: ${j.total_teams} | OVR min: ${j.min_overall} | OVR max: ${j.max_overall}`;
+    if (el) {
+      el.textContent = `Base: ${j.total_teams} | OVR min: ${j.min_overall} | OVR max: ${j.max_overall}`;
+    }
     updateStatsLabels(j);
   } catch {
     // silencioso
