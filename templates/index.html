@@ -185,61 +185,191 @@
       font-size: 0.78rem;
     }
     .screen-stack { display: grid; gap: 6px; justify-items: end; }
-    .home-hero { display: grid; gap: 14px; margin-top: 10px; }
-    .hero-card {
+    .hero-banner {
       position: relative;
-      border-radius: 18px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      background-color: #0b1b3a;
-      background-size: cover;
-      background-position: center;
-      min-height: 170px;
-      padding: 14px;
+      padding: 26px;
+      border-radius: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: linear-gradient(160deg, rgba(7, 12, 24, 0.92), rgba(12, 22, 46, 0.88));
+      text-align: center;
       overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    }
+    .hero-banner::before {
+      content: "";
+      position: absolute;
+      inset: -40% -20% auto -20%;
+      height: 220px;
+      background: radial-gradient(circle at center, rgba(22, 195, 181, 0.35), transparent 60%);
+      opacity: 0.7;
+      z-index: 0;
+    }
+    .hero-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.85);
+      font-weight: 700;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      position: relative;
+      z-index: 1;
+    }
+    .hero-title {
+      margin: 14px 0 8px;
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      position: relative;
+      z-index: 1;
+    }
+    .hero-title span {
+      background: linear-gradient(135deg, #16c3b5, #18b26b);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .hero-subtitle {
+      color: var(--muted);
+      font-size: 1rem;
+      max-width: 620px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+    .hero-actions {
+      margin-top: 18px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 1;
+    }
+    .hero-actions .btn {
+      border-radius: 999px;
+      padding: 10px 18px;
+      font-weight: 800;
+    }
+    .hero-actions .hero-secondary {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.08);
+      color: #eaf2ff;
+    }
+    .hero-quick {
+      margin-top: 16px;
+      display: inline-flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      position: relative;
+      z-index: 1;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.88rem;
+    }
+    .hero-quick span {
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 22px;
+    }
+    .category-card {
+      position: relative;
+      padding: 18px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #fff;
+      text-align: left;
+      overflow: hidden;
+      min-height: 190px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      text-align: left;
-      box-shadow: 0 18px 34px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
     }
-    .hero-card::before {
+    .category-card::after {
       content: "";
       position: absolute;
-      inset: 0;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0));
+      inset: auto 0 0 0;
+      height: 50%;
+      background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.35));
       z-index: 0;
     }
-    .hero-card.hero-fc { background-image: url("/static/illustrations/fc-hero.svg"); }
-    .hero-card.hero-nba { background-image: url("/static/illustrations/nba-hero.svg"); }
-    .hero-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; z-index: 1; }
-    .hero-icon { width: 54px; height: 54px; opacity: 0.95; }
-    .hero-text {
-      z-index: 1;
-      align-self: flex-start;
-      padding: 10px 14px;
-      border-radius: 14px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      background: linear-gradient(135deg, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.1));
-      backdrop-filter: blur(4px);
-    }
-    .hero-title { color: #fff; font-weight: 800; font-size: 1.1rem; }
-    .hero-sub { color: rgba(255, 255, 255, 0.85); font-size: 0.85rem; }
-    .home-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
-    .home-card {
+    .category-card.card-fc { background: linear-gradient(135deg, #0ea5e9, #16c3b5); }
+    .category-card.card-nba { background: linear-gradient(135deg, #16c3b5, #18b26b); }
+    .category-top { display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 1; }
+    .category-icons { display: flex; gap: 8px; }
+    .category-icon {
+      width: 54px;
+      height: 54px;
       border-radius: 16px;
-      padding: 14px 12px;
+      background: rgba(255, 255, 255, 0.2);
+      display: grid;
+      place-items: center;
+    }
+    .category-icon img { width: 36px; height: 36px; }
+    .category-tag {
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.24);
+    }
+    .category-title { font-size: 1.4rem; font-weight: 800; position: relative; z-index: 1; }
+    .category-meta { color: rgba(255, 255, 255, 0.85); font-size: 0.92rem; position: relative; z-index: 1; }
+    .category-action {
+      align-self: flex-start;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(7, 12, 24, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      font-weight: 700;
+      position: relative;
+      z-index: 1;
+    }
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .feature-card {
+      padding: 14px 16px;
+      border-radius: 16px;
       border: 1px solid rgba(255, 255, 255, 0.12);
-      background: rgba(255, 255, 255, 0.06);
-      color: #eaf2ff;
-      font-weight: 800;
-      text-align: left;
-      box-shadow: 0 14px 26px rgba(0, 0, 0, 0.35);
+      background: rgba(255, 255, 255, 0.05);
+      display: grid;
+      gap: 6px;
     }
-    .home-card.primary {
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
-      color: #0a1520;
+    .feature-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(22, 195, 181, 0.9), rgba(24, 178, 107, 0.9));
+      box-shadow: 0 10px 20px rgba(22, 195, 181, 0.3);
     }
-    .home-footer { margin-top: 12px; color: var(--muted); font-size: 0.9rem; }
+    .feature-title { font-weight: 800; font-size: 0.95rem; }
+    .feature-text { color: var(--muted); font-size: 0.88rem; }
+    .reveal { animation: fadeUp 0.7s ease both; }
+    .reveal.delay-1 { animation-delay: 0.08s; }
+    .reveal.delay-2 { animation-delay: 0.16s; }
+    .reveal.delay-3 { animation-delay: 0.24s; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
     .settings-list { display: grid; gap: 10px; margin-top: 8px; }
     .settings-item {
       display: flex;
@@ -469,6 +599,10 @@
       .action-row .btn { width: 100%; }
       .result-grid { grid-template-columns: 1fr; }
       .nav-links { width: 100%; }
+      .hero-title { font-size: 1.8rem; }
+      .category-grid { grid-template-columns: 1fr; }
+      .feature-grid { grid-template-columns: 1fr; }
+      .hero-actions { flex-direction: column; }
     }
   </style>
 </head>
@@ -490,42 +624,80 @@
 
     <div class="grid">
       <section class="glass panel app-screen" id="homePanel">
-        <div class="screen-head">
-          <div>
-            <div class="screen-title">Sorteio FC</div>
-            <div class="screen-sub">EA FC 25 + NBA 2K25</div>
+        <div class="hero-banner">
+          <div class="hero-pill reveal">Gerador de torneios & chaveamentos</div>
+          <div class="hero-title reveal delay-1">Torneios <span>Profissionais</span></div>
+          <div class="hero-subtitle reveal delay-2">
+            Crie chaveamentos para EA FC 25 e NBA 2K25, sorteie times em segundos e compartilhe o resultado em tempo real.
           </div>
-          <div class="screen-chip">AO VIVO</div>
+          <div class="hero-actions reveal delay-3">
+            <button class="btn btn-accent" type="button" onclick="document.getElementById('setupPanel')?.scrollIntoView({behavior:'smooth'});">Novo torneio</button>
+            <button class="btn hero-secondary" type="button" onclick="document.getElementById('roomOpenBtn')?.click();">Entrar na sala</button>
+          </div>
+          <div class="hero-quick">
+            <span>FC 25 & NBA 2K25</span>
+            <span>AO VIVO</span>
+            <span>Chaveamento instantâneo</span>
+          </div>
         </div>
-        <div class="home-hero">
-          <button class="hero-card hero-fc" id="homeFcBtn" type="button">
-            <div class="hero-top">
-              <img class="hero-icon" src="/static/illustrations/icon-ball.svg" alt="Icone futebol" loading="lazy">
-              <img class="hero-icon" src="/static/illustrations/icon-gamepad.svg" alt="Icone controle" loading="lazy">
+
+        <div class="category-grid">
+          <button class="category-card card-fc" id="homeFcBtn" type="button">
+            <div class="category-top">
+              <div class="category-icons">
+                <div class="category-icon">
+                  <img src="/static/illustrations/icon-ball.svg" alt="Icone futebol" loading="lazy">
+                </div>
+                <div class="category-icon">
+                  <img src="/static/illustrations/icon-gamepad.svg" alt="Icone controle" loading="lazy">
+                </div>
+              </div>
+              <div class="category-tag">Popular</div>
             </div>
-            <div class="hero-text">
-              <div class="hero-title">FC Season 25</div>
-              <div class="hero-sub">Sorteio rapido e partidas equilibradas</div>
+            <div>
+              <div class="category-title">FC Season 25</div>
+              <div class="category-meta">Champions, Brasileirão e Seleções</div>
             </div>
+            <div class="category-action">Criar torneio</div>
           </button>
-          <button class="hero-card hero-nba" id="homeNbaBtn" type="button">
-            <div class="hero-top">
-              <img class="hero-icon" src="/static/illustrations/icon-basketball.svg" alt="Icone basquete" loading="lazy">
-              <img class="hero-icon" src="/static/illustrations/icon-court.svg" alt="Icone quadra" loading="lazy">
+
+          <button class="category-card card-nba" id="homeNbaBtn" type="button">
+            <div class="category-top">
+              <div class="category-icons">
+                <div class="category-icon">
+                  <img src="/static/illustrations/icon-basketball.svg" alt="Icone basquete" loading="lazy">
+                </div>
+                <div class="category-icon">
+                  <img src="/static/illustrations/icon-court.svg" alt="Icone quadra" loading="lazy">
+                </div>
+              </div>
+              <div class="category-tag">Popular</div>
             </div>
-            <div class="hero-text">
-              <div class="hero-title">NBA Season 25</div>
-              <div class="hero-sub">Franquias, playoffs e chaveamento</div>
+            <div>
+              <div class="category-title">NBA Season 25</div>
+              <div class="category-meta">Playoffs, conferências e franquias</div>
             </div>
+            <div class="category-action">Criar torneio</div>
           </button>
         </div>
-        <div class="home-actions">
-          <button class="home-card primary" type="button" onclick="document.getElementById('setupPanel')?.scrollIntoView({behavior:'smooth'});">Novo sorteio</button>
-          <button class="home-card" type="button" onclick="document.getElementById('participantInput')?.focus();">Jogadores</button>
-          <button class="home-card" type="button" onclick="document.getElementById('optionsPanel')?.scrollIntoView({behavior:'smooth'});">Opções</button>
-          <button class="home-card" type="button" onclick="document.getElementById('resultsPanel')?.scrollIntoView({behavior:'smooth'});">Resultado</button>
+
+        <div class="feature-grid">
+          <div class="feature-card">
+            <div class="feature-icon"></div>
+            <div class="feature-title">Sorteio automático</div>
+            <div class="feature-text">Times equilibrados e prontos para jogar.</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon"></div>
+            <div class="feature-title">Salas online</div>
+            <div class="feature-text">Compartilhe o link com a galera em segundos.</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon"></div>
+            <div class="feature-title">Chaveamento vivo</div>
+            <div class="feature-text">Visual moderno com fases e confrontos.</div>
+          </div>
         </div>
-        <div class="home-footer">Monte times e compartilhe em segundos.</div>
       </section>
       <section class="glass panel app-screen" id="setupPanel">
         <div class="screen-head">
