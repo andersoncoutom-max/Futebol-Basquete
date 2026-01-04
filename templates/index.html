@@ -55,12 +55,12 @@
     }
 
     body.theme-nba {
-      --accent: #f97316;
-      --accent-2: #ef4444;
+      --accent: #18b26b;
+      --accent-2: #16c3b5;
       background:
-        radial-gradient(900px 520px at 0% -10%, rgba(249, 115, 22, 0.18), transparent 55%),
-        radial-gradient(900px 520px at 100% 0%, rgba(239, 68, 68, 0.18), transparent 55%),
-        linear-gradient(180deg, #fff7ed, #fff5f5);
+        radial-gradient(900px 520px at 0% -10%, rgba(24, 178, 107, 0.22), transparent 55%),
+        radial-gradient(900px 520px at 100% 0%, rgba(22, 195, 181, 0.18), transparent 55%),
+        linear-gradient(180deg, #080f1f, #0f1d3f);
     }
 
     body.theme-dark {
@@ -184,30 +184,46 @@
       font-weight: 700;
       font-size: 0.78rem;
     }
-    .home-hero { display: grid; gap: 12px; margin-top: 10px; }
+    .screen-stack { display: grid; gap: 6px; justify-items: end; }
+    .home-hero { display: grid; gap: 14px; margin-top: 10px; }
     .hero-card {
+      position: relative;
       border-radius: 18px;
       border: 1px solid rgba(255, 255, 255, 0.12);
-      background: rgba(255, 255, 255, 0.05);
-      padding: 12px;
+      background-color: #0b1b3a;
+      background-size: cover;
+      background-position: center;
+      min-height: 170px;
+      padding: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
       text-align: left;
-      display: grid;
-      gap: 10px;
-      box-shadow: 0 14px 26px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 18px 34px rgba(0, 0, 0, 0.4);
     }
-    .hero-card.hero-fc { background: linear-gradient(135deg, rgba(22, 195, 181, 0.35), rgba(12, 22, 46, 0.95)); }
-    .hero-card.hero-nba { background: linear-gradient(135deg, rgba(24, 178, 107, 0.35), rgba(12, 22, 46, 0.95)); }
-    .hero-media {
+    .hero-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0));
+      z-index: 0;
+    }
+    .hero-card.hero-fc { background-image: url("/static/illustrations/fc-hero.svg"); }
+    .hero-card.hero-nba { background-image: url("/static/illustrations/nba-hero.svg"); }
+    .hero-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; z-index: 1; }
+    .hero-icon { width: 54px; height: 54px; opacity: 0.95; }
+    .hero-text {
+      z-index: 1;
+      align-self: flex-start;
+      padding: 10px 14px;
       border-radius: 14px;
-      background: rgba(7, 12, 24, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      padding: 8px;
-      display: grid;
-      place-items: center;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: linear-gradient(135deg, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.1));
+      backdrop-filter: blur(4px);
     }
-    .hero-media img { max-width: 100%; height: 150px; object-fit: contain; display: block; }
-    .hero-title { font-weight: 900; font-size: 1.05rem; }
-    .hero-sub { color: var(--muted); font-size: 0.9rem; }
+    .hero-title { color: #fff; font-weight: 800; font-size: 1.1rem; }
+    .hero-sub { color: rgba(255, 255, 255, 0.85); font-size: 0.85rem; }
     .home-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
     .home-card {
       border-radius: 16px;
@@ -483,8 +499,9 @@
         </div>
         <div class="home-hero">
           <button class="hero-card hero-fc" id="homeFcBtn" type="button">
-            <div class="hero-media">
-              <img src="/static/illustrations/fc-hero.svg" alt="Ilustracao futebol e controle" loading="lazy">
+            <div class="hero-top">
+              <img class="hero-icon" src="/static/illustrations/icon-ball.svg" alt="Icone futebol" loading="lazy">
+              <img class="hero-icon" src="/static/illustrations/icon-gamepad.svg" alt="Icone controle" loading="lazy">
             </div>
             <div class="hero-text">
               <div class="hero-title">FC Season 25</div>
@@ -492,8 +509,9 @@
             </div>
           </button>
           <button class="hero-card hero-nba" id="homeNbaBtn" type="button">
-            <div class="hero-media">
-              <img src="/static/illustrations/nba-hero.svg" alt="Ilustracao basquete" loading="lazy">
+            <div class="hero-top">
+              <img class="hero-icon" src="/static/illustrations/icon-basketball.svg" alt="Icone basquete" loading="lazy">
+              <img class="hero-icon" src="/static/illustrations/icon-court.svg" alt="Icone quadra" loading="lazy">
             </div>
             <div class="hero-text">
               <div class="hero-title">NBA Season 25</div>
@@ -504,16 +522,21 @@
         <div class="home-actions">
           <button class="home-card primary" type="button" onclick="document.getElementById('setupPanel')?.scrollIntoView({behavior:'smooth'});">Novo sorteio</button>
           <button class="home-card" type="button" onclick="document.getElementById('participantInput')?.focus();">Jogadores</button>
-          <button class="home-card" type="button" onclick="document.getElementById('advancedDetails')?.scrollIntoView({behavior:'smooth'});">Opções</button>
+          <button class="home-card" type="button" onclick="document.getElementById('optionsPanel')?.scrollIntoView({behavior:'smooth'});">Opções</button>
           <button class="home-card" type="button" onclick="document.getElementById('resultsPanel')?.scrollIntoView({behavior:'smooth'});">Resultado</button>
         </div>
         <div class="home-footer">Monte times e compartilhe em segundos.</div>
       </section>
       <section class="glass panel app-screen" id="setupPanel">
-        <div>
-          <div class="kicker" id="heroKicker">Sorteio para EA FC 25 e NBA 2K25</div>
-          <h1 id="heroTitle">Sorteio FC</h1>
-          <div class="muted" id="heroSubtitle">Adicione os jogadores, ajuste as opções e clique em “Sortear”.</div>
+        <div class="screen-head">
+          <div>
+            <div class="screen-title" id="heroTitle">Sorteio FC</div>
+            <div class="screen-sub" id="heroSubtitle">Adicione os jogadores, ajuste as opções e clique em “Sortear”.</div>
+          </div>
+          <div class="screen-stack">
+            <div class="screen-chip" id="heroKicker">EA FC 25</div>
+            <div class="screen-chip">Passo 1</div>
+          </div>
         </div>
 
         <div class="divider"></div>
@@ -547,8 +570,22 @@
         <div id="participantsList" class="chip-list"></div>
         <div id="emptyHint" class="muted small mt-2">Adicione ao menos 2 jogadores para liberar o sorteio.</div>
 
-        <div class="divider"></div>
+        <div class="action-row mt-3">
+          <button class="btn btn-accent" type="button" onclick="document.getElementById('optionsPanel')?.scrollIntoView({behavior:'smooth'});">Continuar para opções</button>
+        </div>
+      </section>
 
+      <section class="glass panel app-screen" id="optionsPanel">
+        <div class="screen-head">
+          <div>
+            <div class="screen-title">Opções de sorteio</div>
+            <div class="screen-sub">Defina regras, formato e equilíbrio</div>
+          </div>
+          <div class="screen-stack">
+            <div class="screen-chip">Regras</div>
+            <div class="screen-chip">Passo 2</div>
+          </div>
+        </div>
         <div class="section-title">Opções</div>
         <div id="optionSummary" class="muted small mt-1"></div>
         <div class="dataset-tabs mt-2" role="tablist" aria-label="Jogo">
@@ -623,10 +660,16 @@
       </section>
 
       <section class="glass panel app-screen d-none" id="resultsPanel">
-        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
-          <div class="section-title mb-0">Resultado</div>
-          <div class="action-row compact">
-            <button id="toggleViewBtn" class="btn btn-ghost btn-sm" type="button" disabled>Ver tabela</button>
+        <div class="screen-head">
+          <div>
+            <div class="screen-title">Resultado</div>
+            <div class="screen-sub">Cards e tabela do sorteio</div>
+          </div>
+          <div class="screen-stack">
+            <div class="screen-chip">Passo 3</div>
+            <div class="action-row compact">
+              <button id="toggleViewBtn" class="btn btn-ghost btn-sm" type="button" disabled>Ver tabela</button>
+            </div>
           </div>
         </div>
 
@@ -748,10 +791,10 @@
   </dialog>
 
   <div class="bottom-nav">
-    <button type="button" onclick="document.getElementById('setupPanel')?.scrollIntoView({behavior:'smooth'});">Novo</button>
-    <button type="button" onclick="document.getElementById('advancedDetails')?.scrollIntoView({behavior:'smooth'});">Opções</button>
+    <button type="button" onclick="document.getElementById('homePanel')?.scrollIntoView({behavior:'smooth'});">Início</button>
+    <button type="button" onclick="document.getElementById('setupPanel')?.scrollIntoView({behavior:'smooth'});">Jogadores</button>
+    <button type="button" onclick="document.getElementById('optionsPanel')?.scrollIntoView({behavior:'smooth'});">Opções</button>
     <button type="button" onclick="document.getElementById('resultsPanel')?.scrollIntoView({behavior:'smooth'});">Resultado</button>
-    <button type="button" onclick="document.getElementById('roomOpenBtn')?.click();">Sala</button>
   </div>
 
   <div id="loadingOverlay" class="loading-overlay">

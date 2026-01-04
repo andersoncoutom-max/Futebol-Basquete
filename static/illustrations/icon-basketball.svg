@@ -1,0 +1,7 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Basquete">
+  <circle cx="60" cy="60" r="48" fill="#f59e0b" stroke="#b45309" stroke-width="6"/>
+  <path d="M12 60 C36 40 84 40 108 60" fill="none" stroke="#8a3412" stroke-width="6"/>
+  <path d="M12 60 C36 80 84 80 108 60" fill="none" stroke="#8a3412" stroke-width="6"/>
+  <path d="M60 12 C60 40 60 80 60 108" fill="none" stroke="#8a3412" stroke-width="6"/>
+  <path d="M20 60 C40 60 80 60 100 60" fill="none" stroke="#8a3412" stroke-width="6"/>
+</svg>

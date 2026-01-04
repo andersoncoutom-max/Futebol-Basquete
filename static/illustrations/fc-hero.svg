@@ -1,8 +1,8 @@
 ﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" role="img" aria-label="FC illustration">
   <defs>
     <radialGradient id="glow" cx="0.2" cy="0.3" r="0.8">
-      <stop offset="0" stop-color="#22d3ee" stop-opacity="0.35"/>
-      <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
+      <stop offset="0" stop-color="#16c3b5" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#16c3b5" stop-opacity="0"/>
     </radialGradient>
   </defs>
   <rect x="0" y="0" width="800" height="400" rx="28" fill="url(#glow)"/>
@@ -15,12 +15,12 @@
     <polygon points="210,235 232,245 232,275 195,290 180,255" fill="#0a1520"/>
   </g>
   <g transform="translate(360,90)">
-    <rect x="0" y="40" width="320" height="150" rx="60" fill="#0a1520" stroke="#22d3ee" stroke-width="6"/>
+    <rect x="0" y="40" width="320" height="150" rx="60" fill="#0a1520" stroke="#16c3b5" stroke-width="6"/>
     <rect x="40" y="90" width="70" height="20" rx="8" fill="#13304a"/>
     <rect x="55" y="70" width="20" height="60" rx="6" fill="#13304a"/>
-    <circle cx="250" cy="110" r="18" fill="#22d3ee"/>
+    <circle cx="250" cy="110" r="18" fill="#16c3b5"/>
     <circle cx="280" cy="130" r="14" fill="#18b26b"/>
-    <circle cx="230" cy="130" r="14" fill="#3ca2ff"/>
+    <circle cx="230" cy="130" r="14" fill="#16c3b5"/>
     <rect x="150" y="70" width="30" height="14" rx="6" fill="#f5f7fb"/>
     <rect x="150" y="95" width="30" height="14" rx="6" fill="#f5f7fb"/>
   </g>
