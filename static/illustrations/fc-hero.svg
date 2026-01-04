@@ -1,0 +1,27 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" role="img" aria-label="FC illustration">
+  <defs>
+    <radialGradient id="glow" cx="0.2" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#22d3ee" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="0" y="0" width="800" height="400" rx="28" fill="url(#glow)"/>
+  <g transform="translate(40,20)">
+    <circle cx="180" cy="200" r="110" fill="#f5f7fb" stroke="#0a1520" stroke-width="10"/>
+    <polygon points="180,150 212,172 202,210 158,210 148,172" fill="#0a1520"/>
+    <polygon points="110,175 135,160 150,190 130,215 100,200" fill="#0a1520"/>
+    <polygon points="250,175 270,200 240,215 210,190 225,160" fill="#0a1520"/>
+    <polygon points="150,235 180,255 165,290 130,275 128,245" fill="#0a1520"/>
+    <polygon points="210,235 232,245 232,275 195,290 180,255" fill="#0a1520"/>
+  </g>
+  <g transform="translate(360,90)">
+    <rect x="0" y="40" width="320" height="150" rx="60" fill="#0a1520" stroke="#22d3ee" stroke-width="6"/>
+    <rect x="40" y="90" width="70" height="20" rx="8" fill="#13304a"/>
+    <rect x="55" y="70" width="20" height="60" rx="6" fill="#13304a"/>
+    <circle cx="250" cy="110" r="18" fill="#22d3ee"/>
+    <circle cx="280" cy="130" r="14" fill="#18b26b"/>
+    <circle cx="230" cy="130" r="14" fill="#3ca2ff"/>
+    <rect x="150" y="70" width="30" height="14" rx="6" fill="#f5f7fb"/>
+    <rect x="150" y="95" width="30" height="14" rx="6" fill="#f5f7fb"/>
+  </g>
+</svg>

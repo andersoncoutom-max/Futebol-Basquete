@@ -1407,6 +1407,14 @@ async function init() {
 
   $("datasetFc25Btn")?.addEventListener("click", () => setDataset("fc25"));
   $("datasetNbaBtn")?.addEventListener("click", () => setDataset("nba"));
+  $("homeFcBtn")?.addEventListener("click", () => {
+    setDataset("fc25");
+    $("setupPanel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  $("homeNbaBtn")?.addEventListener("click", () => {
+    setDataset("nba");
+    $("setupPanel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 
   $("presetSelect")?.addEventListener("change", (e) => {
     applyPreset(e.target.value);
