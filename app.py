@@ -31,6 +31,19 @@ POOLS_PATH = os.path.join(APP_DIR, "data", "pools.json")
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret")
 
+ASSET_LINKS = [
+    {
+        "relation": ["delegate_permission/common.handle_all_urls"],
+        "target": {
+            "namespace": "android_app",
+            "package_name": "com.onrender.futebol_basquete.twa",
+            "sha256_cert_fingerprints": [
+                "7C:69:8F:59:78:04:9B:72:A0:97:DE:44:1C:B1:A7:4B:EE:1E:3A:19:67:0A:42:33:9F:29:FB:A1:6E:EE:C3:09"
+            ],
+        },
+    }
+]
+
 
 def _now_iso() -> str:
     return datetime.utcnow().isoformat(timespec="seconds")
@@ -261,6 +274,11 @@ def api_me():
 @login_required
 def index():
     return render_template("index.html")
+
+
+@app.get("/.well-known/assetlinks.json")
+def assetlinks():
+    return jsonify(ASSET_LINKS)
 
 
 @app.get("/s/<code>")
