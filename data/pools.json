@@ -1,0 +1,115 @@
+{
+  "fc25": [
+    {
+      "key": "fc_ucl_top",
+      "label": "Champions (clubes europeus)",
+      "description": "Seleção de clubes fortes da Europa para clima de Champions.",
+      "include_team_ids": [
+        "243",
+        "116325",
+        "10",
+        "9",
+        "116009",
+        "116010",
+        "11",
+        "18",
+        "21",
+        "73",
+        "45",
+        "48",
+        "240",
+        "22",
+        "112172",
+        "234",
+        "236",
+        "245",
+        "247",
+        "246",
+        "237",
+        "52",
+        "115841",
+        "219",
+        "69",
+        "481",
+        "78",
+        "86",
+        "325",
+        "101059",
+        "131682",
+        "131681"
+      ],
+      "defaults": {
+        "category": "clubs_men",
+        "mode": "clubs",
+        "format": "bracket"
+      }
+    },
+    {
+      "key": "fc_libertadores_top",
+      "label": "Libertadores (times tradicionais)",
+      "description": "Times tradicionais/sul-americanos para torneio rápido.",
+      "include_team_ids": [
+        "1043",
+        "383",
+        "567",
+        "1041",
+        "598",
+        "1629",
+        "1048",
+        "517",
+        "569",
+        "568",
+        "1035",
+        "1876",
+        "1877",
+        "101085",
+        "101083",
+        "101088",
+        "1013",
+        "110580",
+        "110980",
+        "15029",
+        "111010",
+        "112908",
+        "110986",
+        "110981",
+        "101110",
+        "101100"
+      ],
+      "defaults": {
+        "category": "clubs_men",
+        "mode": "clubs",
+        "format": "bracket"
+      }
+    }
+  ],
+  "nba": [
+    {
+      "key": "nba_playoffs_16",
+      "label": "Playoffs NBA (16 times)",
+      "description": "Pacote de 16 times para clima de playoffs (Leste + Oeste).",
+      "include_team_ids": [
+        "BOS",
+        "MIA",
+        "MIL",
+        "CLE",
+        "NYK",
+        "ORL",
+        "IND",
+        "PHI",
+        "DEN",
+        "MIN",
+        "OKC",
+        "LAC",
+        "DAL",
+        "PHX",
+        "LAL",
+        "NOP"
+      ],
+      "defaults": {
+        "category": "all",
+        "format": "bracket"
+      }
+    }
+  ]
+}

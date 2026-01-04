@@ -25,15 +25,15 @@
       }
     },
     {
-      "key": "nba2k25",
+      "key": "nba",
       "name": "NBA 2K25",
       "sport": "basketball",
-      "csv_path": "data/teams_nba2k25.csv",
+      "csv_path": "data/teams_nba.csv",
       "rating_fields": {
         "overall": "overall",
-        "attack": "offense",
-        "midfield": "",
-        "defence": "defense"
+        "attack": "attack",
+        "midfield": "midfield",
+        "defence": "defence"
       },
       "filters": {
         "conference": true,

@@ -3,8 +3,15 @@ __pycache__/
 .venv/
 data/history.sqlite3
 android.keystore
+keystore.properties
+local.properties
+upload-keystore.jks
+upload-key.pem
+*.jks
+*.pem
 *.apk
 *.aab
+*.idsig
 build/
 app/build/
 .gradle/

@@ -1,114 +1,187 @@
-﻿const participants = [];
-let lastRemoved = null;
-let lastDraw = null;
-let resultView = "cards";
-let liveMode = false;
+/* global html2canvas */
 
-const PRO_DEFAULT_URL = "https://wa.me/55SEU_NUMERO?text=Quero%20assinar%20o%20Sorteio%20Pro";
-
-const datasetState = {
-  current: "fc25"
+const state = {
+  dataset: "fc25",
+  preset: "",
+  participants: [],
+  lastRemoved: null,
+  lastDraw: null,
+  resultView: "cards",
+  room: { code: "", url: "" },
 };
 
 const bracketState = {
   rounds: [],
-  pendingByes: []
+  pendingByes: [],
 };
 
-const presets = {
-  champions: { theme: "champions", dataset: "fc25", rules: { balance: "overall", avoidRepeat: true, mode: "all" } },
-  selecoes: { theme: "selecoes", dataset: "fc25", rules: { balance: "matchup", category: "national", mode: "national" } },
-  classicos: { theme: "classicos", dataset: "fc25", rules: { balance: "overall", category: "clubs", mode: "clubs" } },
-  playoffs: { theme: "libertadores", dataset: "nba", rules: { balance: "overall", avoidRepeat: true, mode: "all" } }
+const BUILTIN_PRESETS = {
+  fc_quick: {
+    dataset: "fc25",
+    label: "Sorteio rápido",
+    hero: {
+      kicker: "EA FC 25",
+      title: "Sorteio rápido e justo",
+      subtitle: "Adicione os jogadores e sorteie times na hora.",
+    },
+    defaults: { category: "clubs_men" },
+    filters: {},
+  },
+  fc_selecoes: {
+    dataset: "fc25",
+    label: "Seleções (masculino)",
+    hero: {
+      kicker: "EA FC 25",
+      title: "Seleções em foco",
+      subtitle: "Sorteie seleções e monte confrontos rápidos.",
+    },
+    defaults: { category: "national_men", mode: "national" },
+    filters: { team_types: ["NATIONAL"], genders: ["MEN"] },
+  },
+  fc_classicos: {
+    dataset: "fc25",
+    label: "Clássicos (clubes)",
+    hero: {
+      kicker: "EA FC 25",
+      title: "Clássicos e rivalidades",
+      subtitle: "Clubes masculinos e confronto direto.",
+    },
+    defaults: { category: "clubs_men", mode: "clubs" },
+    filters: { team_types: ["CLUB"], genders: ["MEN"] },
+  },
+  nba_quick: {
+    dataset: "nba",
+    label: "Sorteio rápido",
+    hero: {
+      kicker: "NBA 2K25",
+      title: "Sorteio NBA",
+      subtitle: "Escolha os jogadores e sorteie franquias.",
+    },
+    defaults: { category: "all" },
+    filters: {},
+  },
+  nba_playoffs: {
+    dataset: "nba",
+    label: "Playoffs (times fortes)",
+    hero: {
+      kicker: "NBA 2K25",
+      title: "Playoffs NBA",
+      subtitle: "Chave direto com clima de mata-mata.",
+    },
+    defaults: { category: "all", format: "bracket" },
+    filters: {},
+  },
+  nba_east: {
+    dataset: "nba",
+    label: "Conferência Leste",
+    hero: {
+      kicker: "NBA 2K25",
+      title: "Conferência Leste",
+      subtitle: "Só times do Leste.",
+    },
+    defaults: { category: "east" },
+    filters: { conferences: ["Eastern"] },
+  },
+  nba_west: {
+    dataset: "nba",
+    label: "Conferência Oeste",
+    hero: {
+      kicker: "NBA 2K25",
+      title: "Conferência Oeste",
+      subtitle: "Só times do Oeste.",
+    },
+    defaults: { category: "west" },
+    filters: { conferences: ["Western"] },
+  },
 };
 
-const tabButtons = document.querySelectorAll("[data-tab-target]");
-const tabPanels = document.querySelectorAll(".tab-panel");
-const themeButtons = document.querySelectorAll("[data-theme]");
+let PRESETS = { ...BUILTIN_PRESETS };
 
-const themeCopy = {
-  champions: {
-    kicker: "Sorteio de Times para EA FC e NBA 2K",
-    title: "Sorteio r\u00e1pido",
-    subtitle: "Monte os jogadores e gere confrontos em segundos."
-  },
-  playoffs: {
-    kicker: "Sorteio de Times para EA FC e NBA 2K",
-    title: "Playoffs NBA",
-    subtitle: "Chaves diretas, ritmo de eliminat\u00f3rias."
-  },
-  selecoes: {
-    kicker: "Sorteio de Times para EA FC e NBA 2K",
-    title: "Sele\u00e7\u00f5es em foco",
-    subtitle: "Sorteie sele\u00e7\u00f5es e mantenha o equil\u00edbrio entre os jogadores."
-  },
-  classicos: {
-    kicker: "Sorteio de Times para EA FC e NBA 2K",
-    title: "Cl\u00e1ssicos e rivalidades",
-    subtitle: "R\u00e1pido para montar elencos e dividir os times."
-  }
-};
+function poolToPreset(dataset, pool) {
+  const label = String(pool.label || "").trim() || "Preset";
+  const title = label;
+  const subtitle = String(pool.description || "").trim() || "Seleção pronta de times.";
+  const kicker = dataset === "nba" ? "NBA 2K25" : "EA FC 25";
 
-function setActiveTab(tabId) {
-  if (!tabButtons.length || !tabPanels.length) return;
-  tabButtons.forEach((btn) => {
-    const target = btn.getAttribute("data-tab-target");
-    btn.classList.toggle("active", target === tabId);
-  });
-  tabPanels.forEach((panel) => {
-    panel.classList.toggle("active", panel.getAttribute("data-tab") === tabId);
-  });
-
-  const lock = tabId === "jogadores";
-  tabButtons.forEach((btn) => {
-    const target = btn.getAttribute("data-tab-target");
-    if (!target) return;
-    const keepEnabled = ["jogadores", "opcoes"].includes(target);
-    if (lock && !keepEnabled) {
-      btn.classList.add("disabled");
-      btn.setAttribute("disabled", "disabled");
-    } else if (!lock) {
-      btn.classList.remove("disabled");
-      btn.removeAttribute("disabled");
-    }
-  });
+  return {
+    dataset,
+    label,
+    hero: { kicker, title, subtitle },
+    defaults: pool.defaults || {},
+    filters: { include_team_ids: pool.include_team_ids || [] },
+  };
 }
 
-tabButtons.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    if (btn.classList.contains("disabled") || btn.hasAttribute("disabled")) return;
-    const target = btn.getAttribute("data-tab-target");
-    if (target) setActiveTab(target);
+function mergePools(pools) {
+  if (!pools || typeof pools !== "object") return;
+
+  const next = { ...BUILTIN_PRESETS };
+  ["fc25", "nba"].forEach((dataset) => {
+    const list = pools[dataset];
+    if (!Array.isArray(list)) return;
+    list.forEach((pool) => {
+      const key = String(pool?.key || "").trim();
+      if (!key) return;
+      next[`pool_${dataset}_${key}`] = poolToPreset(dataset, pool);
+    });
   });
-});
+  PRESETS = next;
+}
 
-function setTheme(theme) {
-  const body = document.body;
-  if (!body) return;
-  body.classList.remove("theme-champions", "theme-libertadores", "theme-selecoes", "theme-classicos");
-  if (theme) body.classList.add(`theme-${theme}`);
-
-  themeButtons.forEach((btn) => {
-    btn.classList.toggle("active", btn.getAttribute("data-theme") === theme);
-  });
-
-  const copy = themeCopy[theme];
-  if (copy) {
-    const kicker = document.getElementById("heroKicker");
-    const title = document.getElementById("heroTitle");
-    const subtitle = document.getElementById("heroSubtitle");
-    if (kicker) kicker.textContent = copy.kicker;
-    if (title) title.textContent = copy.title;
-    if (subtitle) subtitle.textContent = copy.subtitle;
+async function loadRemotePools() {
+  try {
+    const res = await fetch("/api/pools");
+    if (!res.ok) return;
+    const pools = await res.json();
+    mergePools(pools);
+  } catch {
+    // sem pools remotos
   }
+}
+
+function $(id) {
+  return document.getElementById(id);
+}
+
+function setText(id, value) {
+  const el = $(id);
+  if (el) el.textContent = value;
+}
+
+function showError(message) {
+  const box = $("errorBox");
+  if (!box) return;
+  box.textContent = message;
+  box.classList.remove("d-none");
+}
+
+function clearError() {
+  const box = $("errorBox");
+  if (!box) return;
+  box.textContent = "";
+  box.classList.add("d-none");
 }
 
 function normalizeName(name) {
   return String(name || "").trim();
 }
 
-function generateSeed() {
-  return Math.random().toString(16).slice(2, 6).toUpperCase();
+function uniqueCaseInsensitive(values) {
+  const seen = new Set();
+  const out = [];
+  values.forEach((v) => {
+    const clean = normalizeName(v);
+    if (!clean) return;
+    const key = clean.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(clean);
+  });
+  return out;
+}
+
+function setStorageBool(key, value) {
+  localStorage.setItem(key, value ? "1" : "0");
 }
 
 function getStorageBool(key, fallback = false) {
@@ -117,8 +190,24 @@ function getStorageBool(key, fallback = false) {
   return raw === "1";
 }
 
-function setStorageBool(key, value) {
-  localStorage.setItem(key, value ? "1" : "0");
+function categoryLabel(row, dataset = state.dataset) {
+  const teamType = String(row.team_type || "").toUpperCase();
+  const gender = String(row.gender || "").toUpperCase();
+  if (dataset === "nba") return "NBA";
+  if (teamType === "NATIONAL" && gender === "WOMEN") return "Seleções femininas";
+  if (teamType === "NATIONAL" && gender === "MEN") return "Seleções masculinas";
+  if (teamType === "CLUB" && gender === "WOMEN") return "Clubes femininos";
+  if (teamType === "CLUB" && gender === "MEN") return "Clubes masculinos";
+  if (teamType === "NATIONAL") return "Seleções";
+  return "Clubes";
+}
+
+function badgeText(value) {
+  const clean = String(value || "").trim();
+  if (!clean) return "SF";
+  const parts = clean.split(/\\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
 function hashString(value) {
@@ -131,238 +220,447 @@ function hashString(value) {
   return Math.abs(hash);
 }
 
-function badgeText(value) {
-  const clean = String(value || "").trim();
-  if (!clean) return "SP";
-  const parts = clean.split(/\s+/).filter(Boolean);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[1][0]).toUpperCase();
-}
-
 function badgeColors(value) {
   const h = hashString(value) % 360;
   return {
     solid: `hsl(${h} 70% 55%)`,
-    soft: `hsla(${h} 70% 55% / 0.2)`
+    soft: `hsla(${h} 70% 55% / 0.18)`,
   };
 }
 
-function getLiveMode() {
-  const toggle = document.getElementById("liveModeToggle");
-  if (toggle) return toggle.checked;
-  return getStorageBool("liveMode", false);
+function applyThemeMode(mode) {
+  document.body.classList.toggle("theme-dark", mode === "dark");
+  const btn = $("themeToggleBtn");
+  if (btn) btn.textContent = mode === "dark" ? "Tema claro" : "Tema escuro";
 }
 
-function applyPreset(name) {
-  const preset = presets[name];
+function setDataset(dataset) {
+  state.dataset = dataset;
+  document.body.classList.toggle("theme-nba", dataset === "nba");
+
+  $("datasetFc25Btn")?.classList.toggle("active", dataset === "fc25");
+  $("datasetNbaBtn")?.classList.toggle("active", dataset === "nba");
+
+  fillPresetsForDataset(dataset);
+  updateCategoryOptions(dataset);
+  resetResults();
+}
+
+function updateCategoryOptions(dataset) {
+  const select = $("categorySelect");
+  if (!select) return;
+
+  const previous = select.value;
+  const options = [];
+
+  if (dataset === "nba") {
+    options.push({ value: "all", label: "Todos" });
+    options.push({ value: "east", label: "Leste" });
+    options.push({ value: "west", label: "Oeste" });
+  } else {
+    options.push({ value: "all", label: "Todos" });
+    options.push({ value: "clubs_men", label: "Clubes masculinos" });
+    options.push({ value: "national_men", label: "Seleções masculinas" });
+    options.push({ value: "clubs_women", label: "Clubes femininos" });
+    options.push({ value: "national_women", label: "Seleções femininas" });
+  }
+
+  select.innerHTML = "";
+  options.forEach((opt) => {
+    const o = document.createElement("option");
+    o.value = opt.value;
+    o.textContent = opt.label;
+    select.appendChild(o);
+  });
+
+  if (previous && options.some((o) => o.value === previous)) {
+    select.value = previous;
+  } else {
+    select.value = dataset === "nba" ? "all" : "clubs_men";
+  }
+}
+
+function toggleTopN() {
+  const modeSelect = $("modeSelect");
+  const topWrap = $("topNWrap");
+  if (!modeSelect || !topWrap) return;
+  topWrap.classList.toggle("d-none", modeSelect.value !== "top");
+}
+
+function fillPresetsForDataset(dataset) {
+  const select = $("presetSelect");
+  if (!select) return;
+
+  const options = Object.entries(PRESETS)
+    .filter(([, p]) => p.dataset === dataset)
+    .map(([key, p]) => ({ key, label: p.label }));
+
+  select.innerHTML = "";
+  options.forEach((opt) => {
+    const o = document.createElement("option");
+    o.value = opt.key;
+    o.textContent = opt.label;
+    select.appendChild(o);
+  });
+
+  const fallback = options[0]?.key || "";
+  const want = state.preset && options.some((o) => o.key === state.preset) ? state.preset : fallback;
+  select.value = want;
+  applyPreset(want);
+}
+
+function applyPreset(presetId) {
+  const preset = PRESETS[presetId];
   if (!preset) return;
-  if (preset.theme) {
-    setTheme(preset.theme);
+  state.preset = presetId;
+
+  if (preset.hero) {
+    setText("heroKicker", preset.hero.kicker || "");
+    setText("heroTitle", preset.hero.title || "");
+    setText("heroSubtitle", preset.hero.subtitle || "");
   }
 
-  const rules = preset.rules || {};
-  const balanceSelect = document.getElementById("balanceSelect");
-  if (balanceSelect && rules.balance && balanceSelect.querySelector(`option[value="${rules.balance}"]`)) {
-    balanceSelect.value = rules.balance;
-  }
+  const modeSelect = $("modeSelect");
+  const categorySelect = $("categorySelect");
+  const formatSelect = $("formatSelect");
 
-  const avoidRepeatToggle = document.getElementById("avoidRepeatToggle");
-  if (avoidRepeatToggle && typeof rules.avoidRepeat === "boolean") {
-    avoidRepeatToggle.checked = rules.avoidRepeat;
-  }
+  if (preset.defaults?.mode && modeSelect) modeSelect.value = preset.defaults.mode;
+  if (preset.defaults?.category && categorySelect) categorySelect.value = preset.defaults.category;
+  if (preset.defaults?.format && formatSelect) formatSelect.value = preset.defaults.format;
 
-  const avoidRepeat3Toggle = document.getElementById("avoidRepeat3Toggle");
-  if (avoidRepeat3Toggle && typeof rules.avoidRepeat3 === "boolean") {
-    avoidRepeat3Toggle.checked = rules.avoidRepeat3;
-  }
-
-  const modeSelect = document.getElementById("modeSelect");
-  if (modeSelect && rules.mode && modeSelect.querySelector(`option[value="${rules.mode}"]`)) {
-    modeSelect.value = rules.mode;
-    toggleTopN();
-  }
-
-  const categorySelect = document.getElementById("categorySelect");
-  if (categorySelect && rules.category && categorySelect.querySelector(`option[value="${rules.category}"]`)) {
-    categorySelect.value = rules.category;
-  }
-
-  syncModeCategory();
-}
-
-function renderResults(drawObj, seedFallback) {
-  if (!drawObj) return;
-  setActionButtons(true);
-  document.querySelectorAll(".post-draw").forEach((el) => el.classList.remove("d-none"));
-  enableFutureTabs();
-
-  const live = getLiveMode();
-  const cards = document.getElementById("resultCards");
-  if (cards) {
-    cards.innerHTML = "";
-    drawObj.draw.forEach((row, idx) => {
-      const label = categoryLabel(row.team_type, row.gender);
-      const badgeSource = row.team_name || row.participant;
-      const colors = badgeColors(badgeSource);
-      const badge = badgeText(badgeSource);
-      const card = document.createElement("div");
-      card.className = "result-card";
-      card.style.setProperty("--badge", colors.solid);
-      card.style.setProperty("--badge-soft", colors.soft);
-      card.innerHTML = `
-        <div class="result-head">
-          <div class="team-badge">${badge}</div>
-          <div>
-            <div class="player">${row.participant}</div>
-            <div class="team">${row.team_name}</div>
-            <div class="muted small">${label}</div>
-          </div>
-        </div>
-        <div class="result-badges">
-          <span class="badge-pill">OVR ${row.overall}</span>
-          <span class="badge-pill">ATT ${row.attack}</span>
-          <span class="badge-pill">MID ${row.midfield}</span>
-          <span class="badge-pill">DEF ${row.defence}</span>
-        </div>
-      `;
-      if (live) {
-        card.classList.add("live-reveal");
-        setTimeout(() => card.classList.add("is-visible"), idx * 120);
-      }
-      cards.appendChild(card);
-    });
-  }
-
-  const tbody = document.getElementById("resultTbody");
-  if (tbody) {
-    tbody.innerHTML = "";
-    drawObj.draw.forEach((row) => {
-      const tr = document.createElement("tr");
-      const label = categoryLabel(row.team_type, row.gender);
-      tr.innerHTML = `
-        <td>${row.participant}</td>
-        <td>${row.team_name}</td>
-        <td>${label}</td>
-        <td>${row.overall}</td>
-        <td>${row.attack}</td>
-        <td>${row.midfield}</td>
-        <td>${row.defence}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
-
-  const resultMeta = document.getElementById("resultMeta");
-  if (resultMeta) {
-    const meta = drawObj.meta || {};
-    const when = meta.timestamp ? new Date(meta.timestamp).toLocaleString() : "";
-    const seedLabel = meta.seed === "auto" ? seedFallback : meta.seed || seedFallback || "N/A";
-    const balanceLabel = meta.balance_mode === "tiers" ? "tiers A/B/C/D" : "aleat\u00f3rio";
-    const repeatLabel = meta.avoid_repeat ? `sem repeti\u00e7\u00e3o (${meta.avoid_repeat_window || 1})` : "repeti\u00e7\u00e3o liberada";
-    const ovrs = drawObj.draw.map((row) => Number(row.overall || 0)).filter((v) => !Number.isNaN(v));
-    const avg = ovrs.length ? Math.round(ovrs.reduce((a, b) => a + b, 0) / ovrs.length) : 0;
-    const diff = ovrs.length ? Math.max(...ovrs) - Math.min(...ovrs) : 0;
-    const eq = diff <= 3 ? "alto" : diff <= 6 ? "bom" : "m\u00e9dio";
-    resultMeta.textContent = `Seed: ${seedLabel} | ${when} | Balanceamento: ${balanceLabel} | ${repeatLabel} | M\u00e9dia OVR ${avg} | Diferen\u00e7a ${diff} | Equil\u00edbrio ${eq}`;
-  }
-
-  setResultView(resultView);
-}
-
-function updateBulkFeedback(value) {
-  const feedback = document.getElementById("bulkFeedback");
-  if (!feedback) return;
-  const lines = (value || "")
-    .split(/\r?\n/)
-    .map((s) => normalizeName(s))
-    .filter(Boolean);
-  if (!lines.length) {
-    feedback.textContent = "";
-    return;
-  }
-  const unique = new Set(lines.map((item) => item.toLowerCase()));
-  const dupes = lines.length - unique.size;
-  feedback.textContent = `${lines.length} nomes detectados \u00b7 ${dupes} duplicados na lista`;
+  toggleTopN();
 }
 
 function renderParticipants() {
-  const ul = document.getElementById("participantsList");
-  const title = document.getElementById("participantTitle");
-  if (title) title.textContent = `Jogadores (${participants.length})`;
+  setText("participantTitle", `Jogadores (${state.participants.length})`);
+  const list = $("participantsList");
+  if (!list) return;
+  list.innerHTML = "";
 
-  ul.innerHTML = "";
-
-  if (!participants.length) {
-    const empty = document.createElement("div");
-    empty.className = "empty-state muted small";
-    empty.textContent = "Cole aqui (1 por linha).";
-    ul.appendChild(empty);
-    return;
-  }
-
-  participants.forEach((name, idx) => {
-    const li = document.createElement("div");
-    li.className = "chip";
-
-    const span = document.createElement("span");
-    span.textContent = name;
-
-    const btn = document.createElement("button");
-    btn.className = "chip-remove";
-    btn.innerHTML = "&#128465;";
-    btn.setAttribute("aria-label", "Remover");
-    btn.onclick = () => {
-      lastRemoved = participants.splice(idx, 1)[0];
+  state.participants.forEach((name) => {
+    const chip = document.createElement("div");
+    chip.className = "chip";
+    chip.innerHTML = `<span>${name}</span><span class="remove" title="Remover">×</span>`;
+    chip.querySelector(".remove")?.addEventListener("click", () => {
+      state.lastRemoved = name;
+      state.participants = state.participants.filter((p) => p !== name);
       renderParticipants();
-    };
-
-    li.appendChild(span);
-    li.appendChild(btn);
-    ul.appendChild(li);
+    });
+    list.appendChild(chip);
   });
 }
 
-function showError(msg) {
-  const box = document.getElementById("errorBox");
-  box.textContent = msg;
-  box.classList.remove("d-none");
+function updateBulkFeedback(text) {
+  const feedback = $("bulkFeedback");
+  if (!feedback) return;
+  const lines = String(text || "")
+    .split(/\r?\n/)
+    .map((s) => normalizeName(s))
+    .filter(Boolean);
+
+  const unique = uniqueCaseInsensitive(lines);
+  const dupes = Math.max(0, lines.length - unique.length);
+  feedback.textContent = lines.length ? `${lines.length} nomes detectados · ${dupes} duplicados` : "";
 }
 
-function clearError() {
-  const box = document.getElementById("errorBox");
-  box.textContent = "";
-  box.classList.add("d-none");
+function setResultView(view) {
+  state.resultView = view;
+  const cards = $("resultCards");
+  const tableWrap = $("resultTableWrap");
+  const toggleBtn = $("toggleViewBtn");
+  if (cards) cards.classList.toggle("d-none", view === "table");
+  if (tableWrap) tableWrap.classList.toggle("d-none", view !== "table");
+  if (toggleBtn) toggleBtn.textContent = view === "table" ? "Ver cards" : "Ver tabela";
 }
 
-function formatCount(value) {
-  return value ?? "--";
+function setActionButtons(enabled) {
+  [
+    "copyBtn",
+    "toggleViewBtn",
+    "shareBtn",
+    "shareResultPngBtn",
+    "shareBracketPngBtn",
+    "swapHomeBtn",
+  ].forEach((id) => {
+    const el = $(id);
+    if (el) el.disabled = !enabled;
+  });
 }
 
-function categoryLabel(teamType, gender) {
-  const t = (teamType || "").toUpperCase();
-  const g = (gender || "").toUpperCase();
+function resetResults() {
+  state.lastDraw = null;
+  $("resultsPanel")?.classList.add("d-none");
+  setActionButtons(false);
+  setResultView("cards");
 
-  if (datasetState.current === "nba") {
-    return g === "WOMEN" ? "WNBA" : "NBA";
+  const cards = $("resultCards");
+  if (cards) cards.innerHTML = "";
+  const tbody = $("resultTbody");
+  if (tbody) tbody.innerHTML = "";
+  const meta = $("resultMeta");
+  if (meta) meta.textContent = "";
+
+  resetBracket();
+  $("rrBox")?.classList.add("d-none");
+}
+
+function showResultsPanel() {
+  $("resultsPanel")?.classList.remove("d-none");
+  $("resultsPanel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function computeEquilibrium(drawRows) {
+  const overalls = drawRows.map((r) => Number(r.overall || 0)).filter((n) => Number.isFinite(n));
+  if (!overalls.length) return { avg: 0, diff: 0, label: "—" };
+  const avg = Math.round(overalls.reduce((a, b) => a + b, 0) / overalls.length);
+  const diff = Math.max(...overalls) - Math.min(...overalls);
+  let label = "bom";
+  if (diff >= 8) label = "alto";
+  else if (diff >= 5) label = "médio";
+  return { avg, diff, label };
+}
+
+async function copyToClipboard(text) {
+  if (!navigator.clipboard?.writeText) throw new Error("Clipboard indisponível.");
+  await navigator.clipboard.writeText(text);
+}
+
+function buildWhatsAppText(payload) {
+  const drawRows = payload.draw || [];
+  const lines = drawRows.map((row) => {
+    const ovr = row.overall ? ` (OVR ${row.overall})` : "";
+    return `• ${row.participant}: ${row.team_name}${ovr}`;
+  });
+  const header = `Sorteio FC — ${state.dataset === "nba" ? "NBA 2K25" : "EA FC 25"}`;
+  const roomLine = state.room.code ? `Sala: ${state.room.code}` : "";
+  return [header, roomLine, "", ...lines].filter(Boolean).join("\n");
+}
+
+async function copyWhatsApp() {
+  if (!state.lastDraw) return;
+  try {
+    await copyToClipboard(buildWhatsAppText(state.lastDraw));
+  } catch {
+    showError("Não foi possível copiar. Verifique as permissões do navegador.");
+  }
+}
+
+async function copyCsv() {
+  if (!state.lastDraw) return;
+  const drawRows = state.lastDraw.draw || [];
+  const lines = drawRows.map((row) => {
+    const label = categoryLabel(row);
+    return `${row.participant};${row.team_name};${label};${row.overall ?? ""};${row.attack ?? ""};${row.midfield ?? ""};${row.defence ?? ""}`;
+  });
+  const text = ["PARTICIPANTE;TIME;CATEGORIA;OVR;ATT;MID;DEF", ...lines].join("\n");
+  try {
+    await copyToClipboard(text);
+  } catch {
+    showError("Não foi possível copiar. Verifique as permissões do navegador.");
+  }
+}
+
+async function exportPng(targetId, filename) {
+  const target = $(targetId);
+  if (!target || typeof html2canvas === "undefined") {
+    showError("PNG indisponível no momento.");
+    return;
+  }
+  const canvas = await html2canvas(target, { backgroundColor: null, scale: 2 });
+  canvas.toBlob((blob) => {
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  });
+}
+
+function buildFiltersFromUI() {
+  const mode = $("modeSelect")?.value || "all";
+  const topN = parseInt($("topNInput")?.value || "10", 10);
+  const category = $("categorySelect")?.value || "all";
+
+  const filters = {
+    mode: mode === "top" ? "top" : "all",
+    top_n: Number.isFinite(topN) ? topN : 10,
+    overall_min: 0,
+    include_invalid: false,
+  };
+
+  if (state.dataset === "nba") {
+    if (category === "east") filters.conferences = ["Eastern"];
+    if (category === "west") filters.conferences = ["Western"];
+  } else {
+    if (category === "clubs_men") {
+      filters.team_types = ["CLUB"];
+      filters.genders = ["MEN"];
+    } else if (category === "national_men") {
+      filters.team_types = ["NATIONAL"];
+      filters.genders = ["MEN"];
+    } else if (category === "clubs_women") {
+      filters.team_types = ["CLUB"];
+      filters.genders = ["WOMEN"];
+    } else if (category === "national_women") {
+      filters.team_types = ["NATIONAL"];
+      filters.genders = ["WOMEN"];
+    }
+
+    if (mode === "clubs") filters.team_types = ["CLUB"];
+    if (mode === "national") filters.team_types = ["NATIONAL"];
   }
 
-  if (t === "NATIONAL" && g === "WOMEN") return "Sele\u00e7\u00f5es femininas";
-  if (t === "NATIONAL" && g === "MEN") return "Sele\u00e7\u00f5es masculinas";
-  if (t === "CLUB" && g === "WOMEN") return "Clubes femininos";
-  if (t === "CLUB" && g === "MEN") return "Clubes masculinos";
-  if (t === "NATIONAL") return "Sele\u00e7\u00f5es";
-  return "Clubes";
+  const preset = PRESETS[state.preset];
+  if (preset?.filters) {
+    Object.entries(preset.filters).forEach(([k, v]) => {
+      if (v === undefined || v === null) return;
+      filters[k] = v;
+    });
+  }
+
+  return filters;
 }
 
-function roundName(size) {
-  if (size <= 1) return "Campeao";
-  if (size === 2) return "Final";
-  if (size === 4) return "Semifinal";
-  if (size === 8) return "Quartas de final";
-  if (size === 16) return "Oitavas de final";
-  if (size === 32) return "Rodada de 32";
-  if (size === 64) return "Rodada de 64";
-  return `Fase de ${size}`;
+function getExcludeTeams() {
+  const avoidRepeat = Boolean($("avoidRepeatToggle")?.checked);
+  const avoidRepeat3 = Boolean($("avoidRepeat3Toggle")?.checked);
+  if (!avoidRepeat && !avoidRepeat3) return [];
+
+  const history = JSON.parse(localStorage.getItem("lastDrawTeamsHistory") || "[]");
+  const flatHistory = history.flat();
+  const last = JSON.parse(localStorage.getItem("lastDrawTeams") || "[]");
+
+  if (avoidRepeat3) return flatHistory;
+  return last;
+}
+
+async function drawNow() {
+  clearError();
+
+  if (!state.participants.length) {
+    showError("Adicione ao menos 1 jogador.");
+    return;
+  }
+
+  const filters = buildFiltersFromUI();
+  const balanceMode = $("balanceSelect")?.value || "random";
+  const format = $("formatSelect")?.value || "bracket";
+  const exclude = getExcludeTeams();
+
+  const payload = {
+    dataset: state.dataset,
+    participants: state.participants,
+    filters,
+    balance_mode: balanceMode,
+    avoid_repeat: exclude.length > 0,
+    avoid_repeat_window: Boolean($("avoidRepeat3Toggle")?.checked) ? 3 : 1,
+    exclude_team_ids: exclude,
+  };
+
+  let res;
+  try {
+    res = await fetch("/api/draw", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    showError("Falha de comunicação com o servidor.");
+    return;
+  }
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    showError(data.error || "Erro ao sortear.");
+    return;
+  }
+
+  state.lastDraw = data;
+  if (state.room.code) {
+    createShareCode({ silent: true }).catch(() => {});
+  }
+
+  const used = (data.draw || []).map((r) => r.team_id).filter(Boolean);
+  localStorage.setItem("lastDrawTeams", JSON.stringify(used));
+  const hist = JSON.parse(localStorage.getItem("lastDrawTeamsHistory") || "[]");
+  hist.unshift(used);
+  localStorage.setItem("lastDrawTeamsHistory", JSON.stringify(hist.slice(0, 3)));
+
+  renderResults(data, { live: Boolean($("liveModeToggle")?.checked) });
+  showResultsPanel();
+
+  if (format === "round_robin") {
+    await runRoundRobin();
+  } else {
+    $("rrBox")?.classList.add("d-none");
+    buildBracket(data.draw || [], balanceMode);
+  }
+}
+
+function renderResults(payload, { live } = { live: false }) {
+  const drawRows = payload.draw || [];
+  setActionButtons(true);
+
+  $("resultsPanel")?.classList.remove("d-none");
+
+  const { avg, diff, label } = computeEquilibrium(drawRows);
+  const bits = [];
+  if ($("balanceSelect")?.value === "tiers") bits.push("Equilibrado");
+  if (payload.meta?.avoid_repeat) {
+    bits.push(`Sem repetir (últ. ${payload.meta.avoid_repeat_window || 1})`);
+  }
+  bits.push(`Média OVR ${avg}`);
+  bits.push(`Diferença ${diff}`);
+  bits.push(`Equilíbrio: ${label}`);
+  setText("resultMeta", bits.join(" · "));
+
+  const cards = $("resultCards");
+  if (cards) cards.innerHTML = "";
+
+  const tbody = $("resultTbody");
+  if (tbody) tbody.innerHTML = "";
+
+  drawRows.forEach((row, idx) => {
+    const labelText = categoryLabel(row);
+    const badgeSource = row.team_name || row.participant;
+    const colors = badgeColors(badgeSource);
+    const badge = badgeText(badgeSource);
+
+    const card = document.createElement("div");
+    card.className = "result-card";
+    card.style.setProperty("--badge", colors.solid);
+    card.style.setProperty("--badge-soft", colors.soft);
+    card.style.animationDelay = live ? `${idx * 120}ms` : `${idx * 35}ms`;
+
+    card.innerHTML = `
+      <div class="result-head">
+        <div class="team-badge">${badge}</div>
+        <div>
+          <div class="player">${row.participant || ""}</div>
+          <div class="team">${row.team_name || ""}</div>
+          <div class="muted small">${labelText}${row.overall ? ` · OVR ${row.overall}` : ""}</div>
+        </div>
+      </div>
+    `;
+    cards?.appendChild(card);
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${row.participant || ""}</td>
+      <td>${row.team_name || ""}</td>
+      <td>${row.overall ?? ""}</td>
+      <td>${row.attack ?? ""}</td>
+      <td>${row.midfield ?? ""}</td>
+      <td>${row.defence ?? row.defense ?? ""}</td>
+    `;
+    tbody?.appendChild(tr);
+  });
+
+  setResultView(state.resultView);
 }
 
 function shuffleArray(arr) {
@@ -374,13 +672,24 @@ function shuffleArray(arr) {
   return out;
 }
 
+function roundName(size) {
+  if (size <= 1) return "Final";
+  if (size === 2) return "Final";
+  if (size === 4) return "Semifinal";
+  if (size === 8) return "Quartas de final";
+  if (size === 16) return "Oitavas de final";
+  if (size === 32) return "Rodada de 32";
+  if (size === 64) return "Rodada de 64";
+  return `Fase de ${size}`;
+}
+
 function createMatches(entries) {
   const matches = [];
   for (let i = 0; i < entries.length; i += 2) {
     const a = entries[i] || null;
     const b = entries[i + 1] || null;
-    const winner = b ? null : (a ? "a" : null);
-    matches.push({ a, b, winner });
+    const winner = b ? null : a ? "a" : null;
+    matches.push({ a, b, winner, scoreA: null, scoreB: null });
   }
   return matches;
 }
@@ -391,10 +700,10 @@ function resetBracket() {
   renderBracket();
 }
 
-function buildBracket(draw) {
+function buildBracket(drawRows, balanceMode) {
   resetBracket();
 
-  const entries = shuffleArray(draw).map((row) => ({
+  const entries = (drawRows || []).map((row) => ({
     participant: row.participant,
     team_name: row.team_name,
     team_type: row.team_type,
@@ -404,28 +713,40 @@ function buildBracket(draw) {
     midfield: row.midfield,
     defence: row.defence,
     competition: row.competition,
-    country: row.country
+    country: row.country,
   }));
 
-  const total = entries.length;
+  let seeded = entries;
+  if (balanceMode === "tiers") {
+    const sorted = entries
+      .slice()
+      .sort((a, b) => Number(b.overall || 0) - Number(a.overall || 0));
+    seeded = [];
+    let left = 0;
+    let right = sorted.length - 1;
+    while (left <= right) {
+      seeded.push(sorted[left]);
+      if (left !== right) seeded.push(sorted[right]);
+      left += 1;
+      right -= 1;
+    }
+  } else {
+    seeded = shuffleArray(entries);
+  }
+
+  const total = seeded.length;
   let base = 1;
   while (base * 2 <= total) base *= 2;
   const extras = total - base;
 
   if (extras > 0) {
     const repCount = extras * 2;
-    const repParticipants = entries.slice(0, repCount);
-    const byes = entries.slice(repCount);
+    const repParticipants = seeded.slice(0, repCount);
+    const byes = seeded.slice(repCount);
     bracketState.pendingByes = byes;
-    bracketState.rounds.push({
-      name: "Repescagem",
-      matches: createMatches(repParticipants)
-    });
+    bracketState.rounds.push({ name: "Repescagem", matches: createMatches(repParticipants) });
   } else {
-    bracketState.rounds.push({
-      name: roundName(entries.length),
-      matches: createMatches(entries)
-    });
+    bracketState.rounds.push({ name: roundName(seeded.length), matches: createMatches(seeded) });
   }
 
   renderBracket();
@@ -469,17 +790,21 @@ function maybeAdvance(roundIndex) {
     return;
   }
 
-  bracketState.rounds.push({
-    name: roundName(participants.length),
-    matches: createMatches(participants)
-  });
+  bracketState.rounds.push({ name: roundName(participants.length), matches: createMatches(participants) });
   renderBracket();
 }
 
 function updateBracketStatus() {
-  const status = document.getElementById("bracketStatus");
-  const nextBtn = document.getElementById("nextRoundBtn");
+  const status = $("bracketStatus");
+  const nextBtn = $("nextRoundBtn");
   if (!status || !nextBtn) return;
+
+  const format = $("formatSelect")?.value || "bracket";
+  if (format === "round_robin") {
+    status.textContent = "Todos contra todos";
+    nextBtn.classList.add("d-none");
+    return;
+  }
 
   if (bracketState.rounds.length === 0) {
     status.textContent = "Gere o sorteio para montar o chaveamento.";
@@ -493,16 +818,14 @@ function updateBracketStatus() {
   const total = round.matches.length;
   status.textContent = `${round.name}: ${decided}/${total} definidos`;
 
-  if (decided === total && !bracketState.rounds[lastIndex + 1]) {
-    nextBtn.classList.remove("d-none");
-  } else {
-    nextBtn.classList.add("d-none");
-  }
+  if (decided === total && !bracketState.rounds[lastIndex + 1]) nextBtn.classList.remove("d-none");
+  else nextBtn.classList.add("d-none");
 }
 
 function renderEntry(entry, isWinner) {
   const btn = document.createElement("button");
   btn.className = `match-btn ${isWinner ? "winner" : ""}`;
+  btn.type = "button";
 
   if (!entry) {
     btn.classList.add("muted");
@@ -511,23 +834,20 @@ function renderEntry(entry, isWinner) {
     return btn;
   }
 
-  const title = document.createElement("div");
-  title.className = "match-title";
-  title.textContent = entry.participant;
-
-  const team = document.createElement("div");
-  team.className = "match-team";
-  team.textContent = entry.team_name;
-
-  const meta = document.createElement("div");
-  meta.className = "match-meta";
-  meta.textContent = `${categoryLabel(entry.team_type, entry.gender)} | OVR ${entry.overall}`;
-
-  btn.appendChild(title);
-  btn.appendChild(team);
-  btn.appendChild(meta);
-
+  btn.innerHTML = `
+    <div class="match-title">${entry.participant}</div>
+    <div class="match-team">${entry.team_name}</div>
+    ${entry.overall ? `<div class="match-meta">OVR ${entry.overall}</div>` : ""}
+  `;
   return btn;
+}
+
+function applyScoreWinner(match) {
+  const scoreA = Number(match.scoreA ?? "");
+  const scoreB = Number(match.scoreB ?? "");
+  if (Number.isNaN(scoreA) || Number.isNaN(scoreB)) return;
+  if (scoreA === scoreB) return;
+  match.winner = scoreA > scoreB ? "a" : "b";
 }
 
 function swapHomeAway() {
@@ -542,17 +862,9 @@ function swapHomeAway() {
   renderBracket();
 }
 
-function applyScoreWinner(match) {
-  const scoreA = Number(match.scoreA ?? "");
-  const scoreB = Number(match.scoreB ?? "");
-  if (Number.isNaN(scoreA) || Number.isNaN(scoreB)) return;
-  if (scoreA === scoreB) return;
-  match.winner = scoreA > scoreB ? "a" : "b";
-}
-
 function drawBracketLines() {
-  const svg = document.getElementById("bracketLines");
-  const grid = document.getElementById("bracketContainer");
+  const svg = $("bracketLines");
+  const grid = $("bracketContainer");
   if (!svg || !grid) return;
 
   const wrap = grid.parentElement;
@@ -584,10 +896,7 @@ function drawBracketLines() {
       const midX = (startX + endX) / 2;
 
       const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      path.setAttribute(
-        "d",
-        `M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`
-      );
+      path.setAttribute("d", `M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`);
       path.setAttribute("stroke", "rgba(15, 23, 42, 0.25)");
       path.setAttribute("stroke-width", "2");
       path.setAttribute("fill", "none");
@@ -597,12 +906,29 @@ function drawBracketLines() {
 }
 
 function renderBracket() {
-  const container = document.getElementById("bracketContainer");
+  const container = $("bracketContainer");
   if (!container) return;
   container.innerHTML = "";
 
-  if (bracketState.rounds.length === 0) {
+  if (!state.lastDraw) {
     container.innerHTML = "<div class=\"muted\">Gere o sorteio para montar o chaveamento.</div>";
+    updateBracketStatus();
+    drawBracketLines();
+    return;
+  }
+
+  const format = $("formatSelect")?.value || "bracket";
+  $("bracketWrap")?.classList.toggle("d-none", format === "round_robin");
+  $("rrBox")?.classList.toggle("d-none", format !== "round_robin");
+
+  if (format === "round_robin") {
+    updateBracketStatus();
+    drawBracketLines();
+    return;
+  }
+
+  if (bracketState.rounds.length === 0) {
+    container.innerHTML = "<div class=\"muted\">Clique em “Sortear” para montar o chaveamento.</div>";
     updateBracketStatus();
     drawBracketLines();
     return;
@@ -637,6 +963,7 @@ function renderBracket() {
 
       const scoreRow = document.createElement("div");
       scoreRow.className = "match-score";
+
       const inputA = document.createElement("input");
       inputA.type = "number";
       inputA.min = "0";
@@ -645,6 +972,7 @@ function renderBracket() {
       inputA.onchange = (e) => {
         match.scoreA = e.target.value === "" ? null : parseInt(e.target.value, 10);
       };
+
       const inputB = document.createElement("input");
       inputB.type = "number";
       inputB.min = "0";
@@ -653,14 +981,17 @@ function renderBracket() {
       inputB.onchange = (e) => {
         match.scoreB = e.target.value === "" ? null : parseInt(e.target.value, 10);
       };
+
       const applyBtn = document.createElement("button");
       applyBtn.type = "button";
+      applyBtn.className = "btn btn-ghost btn-sm";
       applyBtn.textContent = "Confirmar";
       applyBtn.onclick = () => {
         applyScoreWinner(match);
         renderBracket();
         maybeAdvance(rIdx);
       };
+
       scoreRow.appendChild(inputA);
       scoreRow.appendChild(document.createTextNode("x"));
       scoreRow.appendChild(inputB);
@@ -681,868 +1012,399 @@ function renderBracket() {
   requestAnimationFrame(drawBracketLines);
 }
 
-function renderRoundRobin(rr) {
-  const box = document.getElementById("rrBox");
-  const meta = document.getElementById("rrMeta");
-  const tbody = document.getElementById("rrTbody");
-  if (!box || !meta || !tbody) return;
+async function runRoundRobin() {
+  if (!state.lastDraw) return;
+  const rrBox = $("rrBox");
+  const rrTbody = $("rrTbody");
+  const rrMeta = $("rrMeta");
+  const bracketWrap = $("bracketWrap");
+  if (!rrBox || !rrTbody || !rrMeta) return;
 
-  box.classList.remove("d-none");
-  meta.textContent = `Participantes: ${rr.players}. Total de jogos: ${rr.total_matches}.`;
-  tbody.innerHTML = "";
+  rrTbody.innerHTML = "";
+  rrBox.classList.remove("d-none");
+  bracketWrap?.classList.add("d-none");
 
-  (rr.matches || []).forEach((m, idx) => {
-    const a = m.a || {};
-    const b = m.b || {};
+  let res;
+  try {
+    res = await fetch("/api/round_robin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ draw: state.lastDraw.draw || [] }),
+    });
+  } catch {
+    showError("Falha ao gerar todos contra todos.");
+    return;
+  }
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    showError(data.error || "Falha ao gerar todos contra todos.");
+    return;
+  }
+
+  rrMeta.textContent = `${data.players} jogadores · ${data.total_matches} partidas`;
+  (data.matches || []).forEach((m, idx) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${idx + 1}</td>
-      <td>${a.participant || ""}</td>
-      <td>${a.team_name || ""}</td>
+      <td>${m.a?.participant || ""}</td>
+      <td>${m.a?.team_name || ""}</td>
       <td>vs</td>
-      <td>${b.participant || ""}</td>
-      <td>${b.team_name || ""}</td>
+      <td>${m.b?.participant || ""}</td>
+      <td>${m.b?.team_name || ""}</td>
     `;
-    tbody.appendChild(tr);
-  });
-}
-
-function updateModeOptions() {
-  const select = document.getElementById("modeSelect");
-  if (!select) return;
-
-  const previous = select.value;
-  const options = [
-    { value: "all", label: "Todos os times" },
-    { value: "top", label: "Top N por overall" }
-  ];
-
-  if (datasetState.current !== "nba") {
-    options.push({ value: "clubs", label: "Somente clubes" });
-    options.push({ value: "national", label: "Somente sele\u00e7\u00f5es" });
-  }
-
-  select.innerHTML = "";
-  options.forEach((opt) => {
-    const option = document.createElement("option");
-    option.value = opt.value;
-    option.textContent = opt.label;
-    select.appendChild(option);
+    rrTbody.appendChild(tr);
   });
 
-  if (previous && options.some((opt) => opt.value === previous)) {
-    select.value = previous;
-  } else {
-    select.value = "all";
-  }
-
-  toggleTopN();
-  syncModeCategory();
+  updateBracketStatus();
 }
 
-function syncModeCategory() {
-  const modeSelect = document.getElementById("modeSelect");
-  const categorySelect = document.getElementById("categorySelect");
-  if (!modeSelect || !categorySelect) return;
-
-  if (modeSelect.value === "clubs") {
-    const target = datasetState.current === "nba" ? "clubs_men" : "clubs";
-    if (categorySelect.querySelector(`option[value="${target}"]`)) {
-      categorySelect.value = target;
-    }
-  } else if (modeSelect.value === "national") {
-    const target = "national";
-    if (categorySelect.querySelector(`option[value="${target}"]`)) {
-      categorySelect.value = target;
-    }
-  }
+function roomLinkFromCode(code) {
+  const base = `${window.location.origin}${window.location.pathname}`;
+  const url = new URL(base);
+  url.searchParams.set("code", code);
+  return url.toString();
 }
 
-function updateCategoryOptions() {
-  const select = document.getElementById("categorySelect");
-  if (!select) return;
-
-  const previous = select.value;
-  const options = [];
-
-  if (datasetState.current === "nba") {
-    options.push({ value: "all", label: "Todos os times" });
-    options.push({ value: "clubs_men", label: "NBA (masculino)" });
-    options.push({ value: "clubs_women", label: "WNBA (feminino)" });
-  } else {
-    options.push({ value: "all", label: "Todas" });
-    options.push({ value: "clubs", label: "Clubes (todos)" });
-    options.push({ value: "clubs_men", label: "Clubes masculinos" });
-    options.push({ value: "clubs_women", label: "Clubes femininos" });
-    options.push({ value: "national", label: "Sele\u00e7\u00f5es (todas)" });
-    options.push({ value: "national_men", label: "Sele\u00e7\u00f5es masculinas" });
-    options.push({ value: "national_women", label: "Sele\u00e7\u00f5es femininas" });
-  }
-
-  select.innerHTML = "";
-  options.forEach((opt) => {
-    const option = document.createElement("option");
-    option.value = opt.value;
-    option.textContent = opt.label;
-    select.appendChild(option);
-  });
-
-  if (previous && options.some((opt) => opt.value === previous)) {
-    select.value = previous;
-  }
-}
-
-function updateDatasetTabs() {
-  const fcBtn = document.getElementById("datasetFc25Btn");
-  const nbaBtn = document.getElementById("datasetNbaBtn");
-  if (!fcBtn || !nbaBtn) return;
-
-  fcBtn.classList.toggle("active", datasetState.current === "fc25");
-  nbaBtn.classList.toggle("active", datasetState.current === "nba");
-}
-
-function updateStatsLabels(stats) {
-  const infoTotal = document.getElementById("infoTotal");
-  const infoClubs = document.getElementById("infoClubs");
-  const infoWomen = document.getElementById("infoWomen");
-  const infoNational = document.getElementById("infoNational");
-  const labelTotal = document.getElementById("labelTotal");
-  const labelClubs = document.getElementById("labelClubs");
-  const labelWomen = document.getElementById("labelWomen");
-  const labelNational = document.getElementById("labelNational");
-
-  if (!infoTotal || !infoClubs || !infoWomen || !infoNational) return;
-  if (!labelTotal || !labelClubs || !labelWomen || !labelNational) return;
-
-  if (datasetState.current === "nba") {
-    infoTotal.textContent = formatCount(stats.total_teams);
-    infoClubs.textContent = formatCount(stats.counts?.clubs);
-    infoWomen.textContent = formatCount(stats.counts?.women);
-    infoNational.textContent = formatCount(stats.counts?.men ?? "--");
-    labelTotal.textContent = "Times";
-    labelClubs.textContent = "NBA";
-    labelWomen.textContent = "WNBA";
-    labelNational.textContent = "Masc";
-  } else {
-    infoTotal.textContent = formatCount(stats.total_teams);
-    infoClubs.textContent = formatCount(stats.counts?.clubs);
-    infoWomen.textContent = formatCount(stats.counts?.women);
-    infoNational.textContent = formatCount(stats.counts?.national);
-    labelTotal.textContent = "Times";
-    labelClubs.textContent = "Clubes";
-    labelWomen.textContent = "Feminino";
-    labelNational.textContent = "Sele\u00e7\u00f5es";
-  }
-}
-
-async function loadTeamsInfo() {
-  try {
-    const r = await fetch(`/api/teams_info?dataset=${datasetState.current}`);
-    const j = await r.json();
-    const el = document.getElementById("teamsInfo");
-    if (el) {
-      el.textContent = `Base: ${j.total_teams} | OVR min: ${j.min_overall} | OVR max: ${j.max_overall}`;
-    }
-    updateStatsLabels(j);
-  } catch {
-    // silencioso
-  }
-}
-
-function disableFutureTabs() {
-  tabButtons.forEach((btn) => {
-    const target = btn.getAttribute("data-tab-target");
-    if (target && !["jogadores", "opcoes"].includes(target)) {
-      btn.classList.add("disabled");
-      btn.setAttribute("disabled", "disabled");
-    }
-  });
-}
-
-function enableFutureTabs() {
-  tabButtons.forEach((btn) => {
-    btn.classList.remove("disabled");
-    btn.removeAttribute("disabled");
-  });
-}
-
-function setDataset(dataset) {
-  datasetState.current = dataset;
-  const body = document.body;
-  if (body) {
-    body.classList.remove("theme-nba");
-    if (dataset === "nba") body.classList.add("theme-nba");
-  }
-  updateDatasetTabs();
-  updateCategoryOptions();
-  updateModeOptions();
-  if (presetSelect) applyPreset(presetSelect.value);
-  toggleTopN();
-  loadTeamsInfo();
-  resetBracket();
-
-  const rrBox = document.getElementById("rrBox");
-  if (rrBox) rrBox.classList.add("d-none");
-
-  const cards = document.getElementById("resultCards");
-  if (cards) {
-    cards.innerHTML = "";
-  }
-  lastDraw = null;
-  setActionButtons(false);
-  setResultView("cards");
-}
-
-function toggleTopN() {
-  const modeSelect = document.getElementById("modeSelect");
-  const topWrap = document.getElementById("topNWrap");
-  if (!modeSelect || !topWrap) return;
-  topWrap.classList.toggle("d-none", modeSelect.value !== "top");
-}
-
-function setResultView(view) {
-  resultView = view;
-  const cards = document.getElementById("resultCards");
-  const tableWrap = document.getElementById("resultTableWrap");
-  const toggleBtn = document.getElementById("toggleViewBtn");
-  if (cards) cards.classList.toggle("d-none", view === "table");
-  if (tableWrap) tableWrap.classList.toggle("d-none", view !== "table");
-  if (toggleBtn) toggleBtn.textContent = view === "table" ? "Ver cards" : "Ver tabela";
-}
-
-function setActionButtons(enabled) {
-  const ids = [
-    "bracketBtn",
-    "rrBtn",
-    "copyBtn",
-    "shareBtn",
-    "toggleViewBtn",
-    "shareTextBtn",
-    "shareResultPngBtn",
-    "shareBracketPngBtn",
-    "swapHomeBtn"
-  ];
-  ids.forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) el.disabled = !enabled;
-  });
-}
-
-async function copyResult() {
-  if (!lastDraw) return;
-  const lines = (lastDraw.draw || []).map((row) => {
-    const label = categoryLabel(row.team_type, row.gender);
-    return `${row.participant};${row.team_name};${label};${row.overall}`;
-  });
-  const text = ["PARTICIPANTE;TIME;CATEGORIA;OVR", ...lines].join("\n");
-  try {
-    await navigator.clipboard.writeText(text);
-  } catch {
-    showError("N\u00e3o foi poss\u00edvel copiar. Verifique as permiss\u00f5es do navegador.");
-  }
-}
-
-function exportCsv() {
-  if (!lastDraw) return;
-  const lines = (lastDraw.draw || []).map((row) => {
-    const label = categoryLabel(row.team_type, row.gender);
-    return `${row.participant};${row.team_name};${label};${row.overall};${row.attack};${row.midfield};${row.defence}`;
-  });
-  const text = ["PARTICIPANTE;TIME;CATEGORIA;OVR;ATT;MID;DEF", ...lines].join("\n");
-  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "sorteio.csv";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-async function exportPng() {
-  if (!lastDraw) return;
-  const target = document.getElementById("shareCapture");
-  if (!target || typeof html2canvas === "undefined") {
-    showError("PNG indispon\u00edvel no momento.");
-    return;
-  }
-  try {
-    const canvas = await html2canvas(target, { backgroundColor: null, scale: 2 });
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "sorteio.png";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    });
-  } catch {
-    showError("Falha ao gerar PNG.");
-  }
-}
-
-async function exportXlsx() {
-  if (!lastDraw) return;
-  clearError();
-  try {
-    const r = await fetch("/api/export_xlsx", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify(lastDraw)
-    });
-    if (!r.ok) {
-      const j = await r.json().catch(() => ({}));
-      showError(j.error || "Erro ao exportar.");
-      return;
-    }
-    const blob = await r.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "sorteio.xlsx";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(url);
-  } catch {
-    showError("Falha ao exportar.");
-  }
-}
-
-async function shareLink() {
-  if (!lastDraw) return;
-  clearError();
-  try {
-    const meta = lastDraw.meta || {};
-    const label = lastDraw.dataset === "nba" ? "NBA 2K" : "EA FC";
-    const balanceLabel = meta.balance_mode === "tiers" ? "tiers A/B/C/D" : "aleat\u00f3rio";
-    const repeatLabel = meta.avoid_repeat ? `sem repeti\u00e7\u00e3o (${meta.avoid_repeat_window || 1})` : "repeti\u00e7\u00e3o liberada";
-    const lines = (lastDraw.draw || []).map((row) => {
-      const label = categoryLabel(row.team_type, row.gender);
-      return `${row.participant} - ${row.team_name} (${label})`;
-    });
-    const text = [
-      `Sorteio de Times - ${label}`,
-      `Data: ${meta.timestamp ? new Date(meta.timestamp).toLocaleString() : new Date().toLocaleString()}`,
-      `Seed: ${meta.seed || "N/A"} | Balanceamento: ${balanceLabel} | ${repeatLabel}`,
-      "",
-      ...lines
-    ].join("\n");
-    await navigator.clipboard.writeText(text);
-  } catch {
-    showError("N\u00e3o foi poss\u00edvel copiar o texto.");
-  }
-}
-
-async function exportResultPng() {
-  if (!lastDraw) return;
-  const target = document.getElementById("step-sorteio");
-  if (!target || typeof html2canvas === "undefined") {
-    showError("PNG indispon\u00edvel no momento.");
-    return;
-  }
-  try {
-    const canvas = await html2canvas(target, { backgroundColor: null, scale: 2 });
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "sorteio.png";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    });
-  } catch {
-    showError("Falha ao gerar PNG.");
-  }
-}
-
-async function exportBracketPng() {
-  const target = document.getElementById("step-chaveamento");
-  if (!target || typeof html2canvas === "undefined") {
-    showError("PNG indispon?vel no momento.");
-    return;
-  }
-  try {
-    const canvas = await html2canvas(target, { backgroundColor: null, scale: 2 });
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "chaveamento.png";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    });
-  } catch {
-    showError("Falha ao gerar PNG.");
-  }
-}
-
-async function runRoundRobin() {
-  if (!lastDraw) return;
-  clearError();
-  try {
-    const rr = await fetch("/api/round_robin", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ draw: lastDraw.draw || [] })
-    }).then((r) => r.json());
-    renderRoundRobin(rr);
-  } catch {
-    showError("Erro ao gerar todos contra todos.");
-  }
-}
-
-function setupProLinks() {
-  const links = document.querySelectorAll(".js-pro-link");
-  links.forEach((el) => {
-    const custom = el.getAttribute("data-whatsapp");
-    const href = custom && custom.trim() ? custom.trim() : PRO_DEFAULT_URL;
-    el.setAttribute("href", href);
-    el.setAttribute("target", "_blank");
-    el.setAttribute("rel", "noopener");
-  });
-}
-
-function setupReveal() {
-  const items = document.querySelectorAll(".reveal");
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("is-visible");
-          observer.unobserve(entry.target);
-        }
-      });
+function buildRoomPayload() {
+  const payload = {
+    dataset: state.dataset,
+    participants: state.participants,
+    filters: buildFiltersFromUI(),
+    ui: {
+      preset: state.preset,
+      mode: $("modeSelect")?.value || "all",
+      category: $("categorySelect")?.value || "all",
+      top_n: parseInt($("topNInput")?.value || "10", 10),
+      format: $("formatSelect")?.value || "bracket",
+      balance: $("balanceSelect")?.value || "random",
+      avoid_repeat: Boolean($("avoidRepeatToggle")?.checked),
+      avoid_repeat_3: Boolean($("avoidRepeat3Toggle")?.checked),
+      live_mode: Boolean($("liveModeToggle")?.checked),
     },
-    { threshold: 0.15 }
-  );
+  };
 
-  items.forEach((item, idx) => {
-    item.style.transitionDelay = `${idx * 60}ms`;
-    observer.observe(item);
+  if (state.lastDraw?.draw) {
+    payload.draw = state.lastDraw.draw;
+    payload.meta = state.lastDraw.meta;
+    payload.pool_count = state.lastDraw.pool_count;
+  }
+
+  return payload;
+}
+
+function extractShareCode(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+
+  try {
+    const url = new URL(raw);
+    const qp = url.searchParams.get("code");
+    if (qp) return qp;
+    const m = url.pathname.match(/\/s\/([a-z0-9]+)/i);
+    if (m?.[1]) return m[1];
+  } catch {
+    // ignore
+  }
+
+  const q = raw.match(/code=([a-z0-9]+)/i);
+  if (q?.[1]) return q[1];
+  const m = raw.match(/\/s\/([a-z0-9]+)/i);
+  if (m?.[1]) return m[1];
+
+  return raw.replace(/[^a-z0-9]/gi, "");
+}
+
+function updateRoomControls() {
+  const createBtn = $("roomCreateBtn");
+  const copyBtn = $("roomCopyLinkBtn");
+  const input = $("roomCodeInput");
+
+  if (createBtn) createBtn.textContent = state.room.code ? "Salvar sala" : "Criar sala";
+  if (copyBtn) copyBtn.disabled = !state.room.url;
+  if (input && state.room.code) input.value = state.room.code;
+}
+
+async function createShareCode({ forceNew = false, silent = false } = {}) {
+  const payload = buildRoomPayload();
+  const wantsUpdate = Boolean(state.room.code) && !forceNew;
+  const endpoint = wantsUpdate ? `/api/share/${encodeURIComponent(state.room.code)}` : "/api/share";
+  const method = wantsUpdate ? "PUT" : "POST";
+
+  const res = await fetch(endpoint, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    if (!silent) setText("roomStatus", data.error || "Não foi possível salvar a sala.");
+    return null;
+  }
+
+  state.room = {
+    code: String(data.code || "").toUpperCase(),
+    url: data.url || roomLinkFromCode(String(data.code || "")),
+  };
+  updateRoomControls();
+
+  if (!silent) {
+    setText("roomStatus", wantsUpdate ? `Sala atualizada: ${state.room.code}` : `Sala criada: ${state.room.code}`);
+  }
+
+  return data;
+}
+
+async function joinShareCode(value) {
+  const extracted = extractShareCode(value);
+  const clean = String(extracted || "").trim().toUpperCase();
+  if (!clean) return;
+
+  const res = await fetch(`/api/share/${encodeURIComponent(clean)}`);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    setText("roomStatus", data.error || "Código não encontrado.");
+    return;
+  }
+
+  setDataset(data.dataset || "fc25");
+
+  if (data.ui?.preset && PRESETS[data.ui.preset] && PRESETS[data.ui.preset].dataset === (data.dataset || "fc25")) {
+    applyPreset(data.ui.preset);
+  }
+  if (data.ui?.mode && $("modeSelect")) $("modeSelect").value = data.ui.mode;
+  if (data.ui?.category && $("categorySelect")) $("categorySelect").value = data.ui.category;
+  if (Number.isFinite(Number(data.ui?.top_n)) && $("topNInput")) $("topNInput").value = String(data.ui.top_n);
+  if (data.ui?.format && $("formatSelect")) $("formatSelect").value = data.ui.format;
+  if (data.ui?.balance && $("balanceSelect")) $("balanceSelect").value = data.ui.balance;
+  if ($("avoidRepeatToggle")) $("avoidRepeatToggle").checked = Boolean(data.ui?.avoid_repeat);
+  if ($("avoidRepeat3Toggle")) $("avoidRepeat3Toggle").checked = Boolean(data.ui?.avoid_repeat_3);
+  if ($("liveModeToggle")) $("liveModeToggle").checked = Boolean(data.ui?.live_mode);
+  toggleTopN();
+
+  state.participants = Array.isArray(data.participants) ? data.participants : [];
+  renderParticipants();
+
+  state.room = { code: clean, url: roomLinkFromCode(clean) };
+  updateRoomControls();
+
+  const url = new URL(window.location.href);
+  url.searchParams.set("code", clean);
+  window.history.replaceState({}, "", url.toString());
+
+  if (Array.isArray(data.draw) && data.draw.length) {
+    state.lastDraw = data;
+    renderResults(data, { live: false });
+    showResultsPanel();
+
+    const format = $("formatSelect")?.value || "bracket";
+    if (format === "round_robin") await runRoundRobin();
+    else buildBracket(data.draw || [], $("balanceSelect")?.value || "random");
+  } else {
+    state.lastDraw = null;
+    resetResults();
+  }
+
+  $("roomDialog")?.close();
+  setText("roomStatus", `Sala carregada: ${clean}`);
+}
+
+function setupRoomDialog() {
+  const dialog = $("roomDialog");
+  if (!dialog) return;
+
+  const openBtn = $("roomOpenBtn");
+  const closeBtn = $("roomCloseBtn");
+  const joinBtn = $("roomJoinBtn");
+  const createBtn = $("roomCreateBtn");
+  const copyLinkBtn = $("roomCopyLinkBtn");
+
+  openBtn?.addEventListener("click", () => {
+    updateRoomControls();
+    if (state.room.code) setText("roomStatus", `Sala atual: ${state.room.code}`);
+    dialog.showModal();
+  });
+  closeBtn?.addEventListener("click", () => dialog.close());
+
+  joinBtn?.addEventListener("click", async () => {
+    clearError();
+    const code = $("roomCodeInput")?.value || "";
+    await joinShareCode(code);
+  });
+
+  createBtn?.addEventListener("click", async () => {
+    clearError();
+    await createShareCode();
+  });
+
+  copyLinkBtn?.addEventListener("click", async () => {
+    clearError();
+    if (!state.room.url) {
+      const created = await createShareCode();
+      if (!created) return;
+    }
+    try {
+      await copyToClipboard(state.room.url);
+      setText("roomStatus", `Link copiado (${state.room.code})`);
+    } catch {
+      setText("roomStatus", `Sala: ${state.room.code}`);
+    }
   });
 }
 
-function applyThemeMode(mode) {
-  const body = document.body;
-  if (!body) return;
-  body.classList.toggle("theme-dark", mode === "dark");
-  const btn = document.getElementById("themeToggleBtn");
-  if (btn) btn.textContent = mode === "dark" ? "Tema claro" : "Tema escuro";
-}
+async function init() {
+  const savedTheme = localStorage.getItem("themeMode") || "light";
+  applyThemeMode(savedTheme);
 
-function applyTvMode(enabled) {
-  const body = document.body;
-  if (!body) return;
-  body.classList.toggle("tv-mode", enabled);
-  const btn = document.getElementById("tvToggleBtn");
-  if (btn) btn.textContent = enabled ? "Sair do TV" : "Modo TV";
-  if (enabled) setActiveTab("sorteio");
-}
+  $("themeToggleBtn")?.addEventListener("click", () => {
+    const next = document.body.classList.contains("theme-dark") ? "light" : "dark";
+    localStorage.setItem("themeMode", next);
+    applyThemeMode(next);
+  });
 
-function updateRoomStatus(code) {
-  const status = document.getElementById("roomStatus");
-  if (!status) return;
-  status.textContent = code ? `Sala local: ${code}` : "";
-  if (code && navigator.clipboard) {
-    navigator.clipboard.writeText(code).catch(() => {});
-  }
-}
+  $("datasetFc25Btn")?.addEventListener("click", () => setDataset("fc25"));
+  $("datasetNbaBtn")?.addEventListener("click", () => setDataset("nba"));
 
-function generateRoomCode() {
-  return Math.random().toString(36).slice(2, 6).toUpperCase();
-}
+  $("presetSelect")?.addEventListener("change", (e) => applyPreset(e.target.value));
+  $("modeSelect")?.addEventListener("change", toggleTopN);
 
-const participantInput = document.getElementById("participantInput");
-const addParticipantBtn = document.getElementById("addParticipantBtn");
-if (addParticipantBtn && participantInput) {
-  addParticipantBtn.addEventListener("click", () => {
-    const name = normalizeName(participantInput.value);
+  const formatSelect = $("formatSelect");
+  formatSelect?.addEventListener("change", async () => {
+    if (!state.lastDraw) return;
+    if (formatSelect.value === "round_robin") await runRoundRobin();
+    else buildBracket(state.lastDraw.draw || [], $("balanceSelect")?.value || "random");
+  });
+
+  $("balanceSelect")?.addEventListener("change", () => {
+    if (!state.lastDraw) return;
+    const format = $("formatSelect")?.value || "bracket";
+    if (format === "bracket") buildBracket(state.lastDraw.draw || [], $("balanceSelect")?.value || "random");
+  });
+
+  const input = $("participantInput");
+  $("addParticipantBtn")?.addEventListener("click", () => {
+    const name = normalizeName(input?.value);
     if (!name) return;
-    const exists = participants.some((p) => p.toLowerCase() === name.toLowerCase());
+    const exists = state.participants.some((p) => p.toLowerCase() === name.toLowerCase());
     if (exists) {
-      showError("Participante duplicado.");
+      showError("Jogador duplicado.");
       return;
     }
-    participants.push(name);
-    participantInput.value = "";
+    state.participants.push(name);
+    if (input) input.value = "";
     renderParticipants();
   });
 
-  participantInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") addParticipantBtn.click();
+  input?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") $("addParticipantBtn")?.click();
   });
-}
 
-const importBtn = document.getElementById("importBtn");
-if (importBtn) {
-  importBtn.addEventListener("click", () => {
-    const bulk = document.getElementById("bulkInput");
+  $("bulkInput")?.addEventListener("input", (e) => updateBulkFeedback(e.target.value));
+
+  $("importBtn")?.addEventListener("click", () => {
+    const bulk = $("bulkInput");
     if (!bulk) return;
-    const lines = (bulk.value || "")
-      .split(/\r?\n/)
-      .map((s) => normalizeName(s))
-      .filter(Boolean);
-    const before = participants.length;
-    const unique = new Set();
-    lines.forEach((name) => {
-      const key = name.toLowerCase();
-      if (unique.has(key)) return;
-      unique.add(key);
-      const exists = participants.some((p) => p.toLowerCase() === key);
-      if (!exists) participants.push(name);
+    const lines = String(bulk.value || "").split(/\r?\n/);
+    const unique = uniqueCaseInsensitive(lines);
+    const before = state.participants.length;
+    unique.forEach((name) => {
+      const exists = state.participants.some((p) => p.toLowerCase() === name.toLowerCase());
+      if (!exists) state.participants.push(name);
     });
-    const added = participants.length - before;
-    const dupes = lines.length - unique.size;
-    const feedback = document.getElementById("bulkFeedback");
-    if (feedback) {
-      feedback.textContent = `${lines.length} nomes detectados \u00b7 ${dupes} duplicados removidos \u00b7 ${added} adicionados`;
-    }
+    const added = state.participants.length - before;
+    setText("bulkFeedback", `${unique.length} nomes · ${added} adicionados`);
     bulk.value = "";
     renderParticipants();
   });
-}
 
-const liveModeToggle = document.getElementById("liveModeToggle");
-if (liveModeToggle) {
-  liveModeToggle.checked = getStorageBool("liveMode", false);
-  liveModeToggle.addEventListener("change", () => {
-    setStorageBool("liveMode", liveModeToggle.checked);
-  });
-}
-
-const bulkInput = document.getElementById("bulkInput");
-if (bulkInput) {
-  bulkInput.addEventListener("input", () => {
-    updateBulkFeedback(bulkInput.value);
-  });
-}
-
-document.addEventListener("keydown", (e) => {
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() == "v") {
-    if (participants.length === 0) {
-      const details = document.getElementById("pasteDetails");
-      const bulk = document.getElementById("bulkInput");
-      if (details && bulk) {
-        details.open = true;
-        bulk.focus();
-      }
-    }
-  }
-});
-
-const pasteBtn = document.getElementById("pasteBtn");
-if (pasteBtn) {
-  pasteBtn.addEventListener("click", async () => {
+  $("pasteBtn")?.addEventListener("click", async () => {
+    clearError();
     if (!navigator.clipboard?.readText) {
-      showError("Clipboard indispon\u00edvel no navegador.");
+      showError("Clipboard indisponível no navegador.");
       return;
     }
     try {
       const text = await navigator.clipboard.readText();
-      const lines = String(text || "")
-        .split(/[\r\n,;]+/)
-        .map((s) => normalizeName(s))
-        .filter(Boolean);
-      lines.forEach((name) => {
-        const exists = participants.some((p) => p.toLowerCase() === name.toLowerCase());
-        if (!exists) participants.push(name);
+      const names = String(text || "").split(/[\r\n,;]+/);
+      const unique = uniqueCaseInsensitive(names);
+      unique.forEach((name) => {
+        const exists = state.participants.some((p) => p.toLowerCase() === name.toLowerCase());
+        if (!exists) state.participants.push(name);
       });
       renderParticipants();
     } catch {
       showError("Não foi possível acessar o clipboard.");
     }
   });
-}
 
-const undoBtn = document.getElementById("undoBtn");
-if (undoBtn) {
-  undoBtn.addEventListener("click", () => {
-    if (!lastRemoved) return;
-    const exists = participants.some((p) => p.toLowerCase() === lastRemoved.toLowerCase());
-    if (!exists) participants.push(lastRemoved);
-    lastRemoved = null;
+  $("undoBtn")?.addEventListener("click", () => {
+    if (!state.lastRemoved) return;
+    const exists = state.participants.some((p) => p.toLowerCase() === state.lastRemoved.toLowerCase());
+    if (!exists) state.participants.push(state.lastRemoved);
+    state.lastRemoved = null;
     renderParticipants();
   });
-}
 
-const sortParticipantsBtn = document.getElementById("sortParticipantsBtn");
-if (sortParticipantsBtn) {
-  sortParticipantsBtn.addEventListener("click", () => {
-    participants.sort((a, b) => a.localeCompare(b));
+  $("sortParticipantsBtn")?.addEventListener("click", () => {
+    state.participants.sort((a, b) => a.localeCompare(b));
     renderParticipants();
   });
-}
 
-const clearBtn = document.getElementById("clearParticipantsBtn");
-if (clearBtn) {
-  clearBtn.addEventListener("click", () => {
-    participants.length = 0;
-    lastRemoved = null;
+  $("clearParticipantsBtn")?.addEventListener("click", () => {
+    state.participants = [];
+    state.lastRemoved = null;
     renderParticipants();
+    resetResults();
   });
-}
 
-const newSeasonBtn = document.getElementById("newSeasonBtn");
-if (newSeasonBtn) {
-  newSeasonBtn.addEventListener("click", () => {
-    lastDraw = null;
-    resetBracket();
-    const cards = document.getElementById("resultCards");
-    if (cards) cards.innerHTML = "";
-    const resultMeta = document.getElementById("resultMeta");
-    if (resultMeta) resultMeta.textContent = "";
-    setActionButtons(false);
-  });
-}
-
-const nextRoundBtn = document.getElementById("nextRoundBtn");
-if (nextRoundBtn) {
-  nextRoundBtn.addEventListener("click", () => {
-    const lastIndex = bracketState.rounds.length - 1;
-    if (lastIndex >= 0) {
-      maybeAdvance(lastIndex);
-    }
-  });
-}
-
-const datasetFc25Btn = document.getElementById("datasetFc25Btn");
-if (datasetFc25Btn) {
-  datasetFc25Btn.addEventListener("click", () => setDataset("fc25"));
-}
-
-const datasetNbaBtn = document.getElementById("datasetNbaBtn");
-if (datasetNbaBtn) {
-  datasetNbaBtn.addEventListener("click", () => setDataset("nba"));
-}
-
-const presetSelect = document.getElementById("presetSelect");
-function fillPresetsForDataset(dataset) {
-  if (!presetSelect) return;
-  const options = [];
-  Object.entries(presets).forEach(([key, val]) => {
-    if (!val.dataset || val.dataset === dataset) {
-      options.push({ key, label: themeCopy[key]?.title || key });
-    }
-  });
-  presetSelect.innerHTML = "";
-  options.forEach((opt, idx) => {
-    const o = document.createElement("option");
-    o.value = opt.key;
-    o.textContent = opt.label;
-    presetSelect.appendChild(o);
-  });
-  presetSelect.value = options[0]?.key || "";
-  applyPreset(presetSelect.value);
-}
-if (presetSelect) {
-  presetSelect.addEventListener("change", (e) => {
-    applyPreset(e.target.value);
-    toggleTopN();
-  });
-}
-
-const modeSelect = document.getElementById("modeSelect");
-if (modeSelect) {
-  modeSelect.addEventListener("change", () => {
-    toggleTopN();
-    syncModeCategory();
-  });
-}
-
-themeButtons.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const theme = btn.getAttribute("data-theme");
-    setTheme(theme);
-  });
-});
-
-const drawBtn = document.getElementById("drawBtn");
-if (drawBtn) {
-  drawBtn.addEventListener("click", async () => {
-    clearError();
-    const modeSelection = document.getElementById("modeSelect").value;
-  const mode = modeSelection === "top" ? "top" : "all";
-  const topN = parseInt(document.getElementById("topNInput").value || "10", 10);
-  const category = document.getElementById("categorySelect").value;
-  const balanceMode = document.getElementById("balanceSelect")?.value || "overall";
-  const avoidRepeat = Boolean(document.getElementById("avoidRepeatToggle")?.checked);
-  const avoidRepeat3 = Boolean(document.getElementById("avoidRepeat3Toggle")?.checked);
-  const seedValue = generateSeed();
-
-    if (participants.length === 0) {
-      showError("Adicione ao menos 1 participante.");
-      return;
-    }
-
-    try {
-      let exclude = [];
-      if (avoidRepeat || avoidRepeat3) {
-        const history = JSON.parse(localStorage.getItem("lastDrawTeamsHistory") || "[]");
-        const flatHistory = history.flat();
-        const stored = JSON.parse(localStorage.getItem("lastDrawTeams") || "[]");
-        exclude = avoidRepeat3 ? flatHistory : stored;
-        if (!exclude.length && lastDraw?.draw) {
-          exclude = lastDraw.draw.map((row) => row.team_id).filter(Boolean);
+  document.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "v") {
+      if (state.participants.length === 0) {
+        const details = $("pasteDetails");
+        const bulk = $("bulkInput");
+        if (details && bulk) {
+          details.open = true;
+          bulk.focus();
         }
       }
-
-      const r = await fetch("/api/draw", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          dataset: datasetState.current,
-          participants,
-          mode,
-          top_n: topN,
-          category,
-          balance_mode: balanceMode,
-          avoid_repeat: avoidRepeat || avoidRepeat3,
-          avoid_repeat_window: avoidRepeat3 ? 3 : 1,
-          exclude_team_ids: exclude,
-          seed: seedValue
-        })
-      });
-
-      const j = await r.json();
-      if (!r.ok) {
-        showError(j.error || "Erro ao sortear.");
-        return;
-      }
-
-      lastDraw = j;
-      const used = (j.draw || []).map((row) => row.team_id).filter(Boolean);
-      localStorage.setItem("lastDrawTeams", JSON.stringify(used));
-      const history = JSON.parse(localStorage.getItem("lastDrawTeamsHistory") || "[]");
-      history.unshift(used);
-      localStorage.setItem("lastDrawTeamsHistory", JSON.stringify(history.slice(0, 3)));
-      renderResults(j, seedValue);
-      buildBracket(j.draw);
-      setActiveTab("sorteio");
-
-    } catch (e) {
-      showError("Falha de comunicação com o servidor.");
     }
   });
-}
 
-const bracketBtn = document.getElementById("bracketBtn");
-if (bracketBtn) bracketBtn.addEventListener("click", () => {
-  if (lastDraw) {
-    buildBracket(lastDraw.draw || []);
-    setActiveTab("chaveamento");
+  const liveToggle = $("liveModeToggle");
+  if (liveToggle) {
+    liveToggle.checked = getStorageBool("liveMode", false);
+    liveToggle.addEventListener("change", () => setStorageBool("liveMode", liveToggle.checked));
   }
-});
 
-const rrBtn = document.getElementById("rrBtn");
-if (rrBtn) rrBtn.addEventListener("click", () => {
-  runRoundRobin();
-  setActiveTab("chaveamento");
-});
+  $("drawBtn")?.addEventListener("click", drawNow);
 
-const copyBtn = document.getElementById("copyBtn");
-if (copyBtn) copyBtn.addEventListener("click", shareLink);
+  $("toggleViewBtn")?.addEventListener("click", () => setResultView(state.resultView === "table" ? "cards" : "table"));
+  $("copyBtn")?.addEventListener("click", copyWhatsApp);
+  $("shareBtn")?.addEventListener("click", copyCsv);
 
-const csvBtn = document.getElementById("csvBtn");
-if (csvBtn) csvBtn.addEventListener("click", exportCsv);
+  $("shareResultPngBtn")?.addEventListener("click", () => exportPng("shareCapture", "sorteio.png"));
+  $("shareBracketPngBtn")?.addEventListener("click", () => exportPng("bracketWrap", "chaveamento.png"));
 
-const pngBtn = document.getElementById("pngBtn");
-if (pngBtn) pngBtn.addEventListener("click", exportPng);
-
-const exportBtn = document.getElementById("exportBtn");
-if (exportBtn) exportBtn.addEventListener("click", exportXlsx);
-
-const shareBtn = document.getElementById("shareBtn");
-if (shareBtn) shareBtn.addEventListener("click", copyResult);
-
-const toggleViewBtn = document.getElementById("toggleViewBtn");
-if (toggleViewBtn) {
-  toggleViewBtn.addEventListener("click", () => {
-    setResultView(resultView === "table" ? "cards" : "table");
+  $("swapHomeBtn")?.addEventListener("click", swapHomeAway);
+  $("nextRoundBtn")?.addEventListener("click", () => {
+    const lastIndex = bracketState.rounds.length - 1;
+    if (lastIndex >= 0) maybeAdvance(lastIndex);
   });
+
+  window.addEventListener("resize", drawBracketLines);
+
+  setupRoomDialog();
+
+  await loadRemotePools();
+
+  setDataset("fc25");
+  toggleTopN();
+  renderParticipants();
+  renderBracket();
+  resetResults();
+
+  const urlCode = new URLSearchParams(window.location.search).get("code");
+  if (urlCode) await joinShareCode(urlCode);
 }
 
-const shareTextBtn = document.getElementById("shareTextBtn");
-if (shareTextBtn) shareTextBtn.addEventListener("click", shareLink);
-
-const shareResultPngBtn = document.getElementById("shareResultPngBtn");
-if (shareResultPngBtn) shareResultPngBtn.addEventListener("click", exportResultPng);
-
-const shareBracketPngBtn = document.getElementById("shareBracketPngBtn");
-if (shareBracketPngBtn) shareBracketPngBtn.addEventListener("click", exportBracketPng);
-
-const createRoomBtn = document.getElementById("createRoomBtn");
-const joinRoomBtn = document.getElementById("joinRoomBtn");
-const themeToggleBtn = document.getElementById("themeToggleBtn");
-const tvToggleBtn = document.getElementById("tvToggleBtn");
-
-if (createRoomBtn) {
-  createRoomBtn.addEventListener("click", () => {
-    const code = generateRoomCode();
-    localStorage.setItem("roomCode", code);
-    updateRoomStatus(code);
-    alert(`Sala criada: ${code}\\nUse este c\u00f3digo para compartilhar.`);
-  });
-}
-
-if (joinRoomBtn) {
-  joinRoomBtn.addEventListener("click", () => {
-    const code = prompt("Digite o c\u00f3digo da sala");
-    if (!code) return;
-    localStorage.setItem("roomCode", code.trim().toUpperCase());
-    updateRoomStatus(code.trim().toUpperCase());
-    alert(`Entrou na sala: ${code.trim().toUpperCase()}`);
-  });
-}
-
-if (themeToggleBtn) {
-  const saved = localStorage.getItem("themeMode") || "light";
-  applyThemeMode(saved);
-  themeToggleBtn.addEventListener("click", () => {
-    const next = document.body.classList.contains("theme-dark") ? "light" : "dark";
-    localStorage.setItem("themeMode", next);
-    applyThemeMode(next);
-  });
-} else {
-  const saved = localStorage.getItem("themeMode") || "light";
-  applyThemeMode(saved);
-}
-
-if (tvToggleBtn) {
-  const saved = getStorageBool("tvMode", false);
-  applyTvMode(saved);
-  tvToggleBtn.addEventListener("click", () => {
-    const next = !document.body.classList.contains("tv-mode");
-    setStorageBool("tvMode", next);
-    applyTvMode(next);
-    if (next) setActiveTab("sorteio");
-  });
-}
-
-updateRoomStatus(localStorage.getItem("roomCode") || "");
-
-const swapHomeBtn = document.getElementById("swapHomeBtn");
-if (swapHomeBtn) swapHomeBtn.addEventListener("click", swapHomeAway);
-
-window.addEventListener("resize", drawBracketLines);
-
-setDataset("fc25");
-fillPresetsForDataset("fc25");
-renderParticipants();
-renderBracket();
-setupProLinks();
-setupReveal();
-setTheme("champions");
-applyPreset(presetSelect?.value || "champions");
-setActiveTab("jogadores");
-disableFutureTabs();
+document.addEventListener("DOMContentLoaded", init);

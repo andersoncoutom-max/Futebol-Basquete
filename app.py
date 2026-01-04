@@ -26,6 +26,7 @@ from services.draws import apply_filters, balance_pool_by_tiers, draw_assignment
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(APP_DIR, "data", "history.sqlite3")
+POOLS_PATH = os.path.join(APP_DIR, "data", "pools.json")
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret")
@@ -80,6 +81,17 @@ def init_db() -> None:
         con.commit()
     finally:
         con.close()
+
+
+def load_pools() -> Dict[str, Any]:
+    try:
+        with open(POOLS_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except FileNotFoundError:
+        return {}
+    except Exception:
+        return {}
 
 
 def save_history(dataset_key: str, payload: Dict[str, Any]) -> None:
@@ -147,6 +159,7 @@ def save_share(payload: Dict[str, Any]) -> str:
 
 
 def load_share(code: str) -> Optional[Dict[str, Any]]:
+    code = (code or "").strip().upper()
     con = sqlite3.connect(DB_PATH)
     try:
         cur = con.cursor()
@@ -155,6 +168,20 @@ def load_share(code: str) -> Optional[Dict[str, Any]]:
         if not row:
             return None
         return json.loads(row[0])
+    finally:
+        con.close()
+
+
+def update_share(code: str, payload: Dict[str, Any]) -> bool:
+    code = (code or "").strip().upper()
+    if not code:
+        return False
+    con = sqlite3.connect(DB_PATH)
+    try:
+        cur = con.cursor()
+        cur.execute("UPDATE shares SET payload_json = ? WHERE code = ?", (json.dumps(payload, ensure_ascii=False), code))
+        con.commit()
+        return cur.rowcount > 0
     finally:
         con.close()
 
@@ -238,10 +265,9 @@ def index():
 
 @app.get("/s/<code>")
 def share_page(code: str):
-    payload = load_share(code)
-    if not payload:
+    if not load_share(code):
         abort(404)
-    return render_template("share.html", payload_json=json.dumps(payload, ensure_ascii=False))
+    return redirect(url_for("index", code=code.upper()))
 
 
 
@@ -249,6 +275,12 @@ def share_page(code: str):
 @login_required
 def api_datasets():
     return jsonify({"datasets": list_datasets()})
+
+
+@app.get("/api/pools")
+@login_required
+def api_pools():
+    return jsonify(load_pools())
 
 
 @app.get("/api/stats")
@@ -474,11 +506,18 @@ def api_round_robin():
 @login_required
 def api_share():
     payload = request.get_json(force=True, silent=False) or {}
-    draw_rows = payload.get("draw") or []
-    if not isinstance(draw_rows, list) or len(draw_rows) < 1:
-        return jsonify({"error": "Envie um sorteio valido para compartilhar."}), 400
     code = save_share(payload)
-    return jsonify({"code": code, "url": url_for("share_page", code=code, _external=True)})
+    return jsonify({"code": code, "url": url_for("index", code=code, _external=True)})
+
+
+@app.put("/api/share/<code>")
+@login_required
+def api_share_put(code: str):
+    payload = request.get_json(force=True, silent=False) or {}
+    if not update_share(code, payload):
+        return jsonify({"error": "Nao encontrado."}), 404
+    code = (code or "").strip().upper()
+    return jsonify({"code": code, "url": url_for("index", code=code, _external=True)})
 
 
 @app.get("/api/share/<code>")

@@ -10,6 +10,7 @@ def _to_int(value: Any) -> int:
 
 
 def apply_filters(rows: List[Dict[str, Any]], filters: Dict[str, Any]) -> List[Dict[str, Any]]:
+    include_team_ids = {str(x) for x in (filters.get("include_team_ids") or []) if str(x).strip()}
     team_types = set(filters.get("team_types") or ["CLUB", "NATIONAL"])
     genders = set(filters.get("genders") or ["MEN", "WOMEN"])
     competitions = set(filters.get("competitions") or [])
@@ -23,6 +24,8 @@ def apply_filters(rows: List[Dict[str, Any]], filters: Dict[str, Any]) -> List[D
     out = []
     for t in rows:
         if not include_invalid and not t.get("is_valid", True):
+            continue
+        if include_team_ids and str(t.get("team_id")) not in include_team_ids:
             continue
         if team_types and (t.get("team_type") or "") not in team_types:
             continue
