@@ -38,6 +38,9 @@ ASSET_LINKS = [
             "namespace": "android_app",
             "package_name": "com.onrender.futebol_basquete.twa",
             "sha256_cert_fingerprints": [
+                # Chave de assinatura do Google Play (app signing key)
+                "41:42:8E:23:1E:36:E9:03:30:2C:E1:62:79:61:17:20:B7:3B:09:EC:5E:8A:96:ED:0C",
+                # Chave de upload (keystore local)
                 "7C:69:8F:59:78:04:9B:72:A0:97:DE:44:1C:B1:A7:4B:EE:1E:3A:19:67:0A:42:33:9F:29:FB:A1:6E:EE:C3:09"
             ],
         },
