@@ -21,7 +21,7 @@ const BUILTIN_PRESETS = {
     label: "Sorteio rápido",
     hero: {
       kicker: "EA FC 25",
-      title: "Sorteio rápido e justo",
+      title: "Sorteio FC",
       subtitle: "Adicione os jogadores e sorteie times na hora.",
     },
     defaults: { category: "clubs_men" },
@@ -190,6 +190,43 @@ function getStorageBool(key, fallback = false) {
   return raw === "1";
 }
 
+function announce(message) {
+  const live = $("statusAnnouncer");
+  if (live) live.textContent = message;
+}
+
+function storageKey(name) {
+  return `${name}_${state.dataset}`;
+}
+
+async function copyTextWithFallback(text) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // tenta fallback
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "absolute";
+  textarea.style.left = "-9999px";
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  let ok = false;
+  try {
+    ok = document.execCommand("copy");
+  } catch {
+    ok = false;
+  }
+  textarea.remove();
+  return ok;
+}
+
 function categoryLabel(row, dataset = state.dataset) {
   const teamType = String(row.team_type || "").toUpperCase();
   const gender = String(row.gender || "").toUpperCase();
@@ -340,14 +377,26 @@ function renderParticipants() {
   state.participants.forEach((name) => {
     const chip = document.createElement("div");
     chip.className = "chip";
-    chip.innerHTML = `<span>${name}</span><span class="remove" title="Remover">×</span>`;
-    chip.querySelector(".remove")?.addEventListener("click", () => {
+    const nameSpan = document.createElement("span");
+    nameSpan.textContent = name;
+
+    const removeSpan = document.createElement("span");
+    removeSpan.className = "remove";
+    removeSpan.title = "Remover";
+    removeSpan.setAttribute("aria-label", `Remover ${name}`);
+    removeSpan.textContent = "×";
+
+    removeSpan.addEventListener("click", () => {
       state.lastRemoved = name;
       state.participants = state.participants.filter((p) => p !== name);
       renderParticipants();
     });
+
+    chip.appendChild(nameSpan);
+    chip.appendChild(removeSpan);
     list.appendChild(chip);
   });
+  setDrawEnabled();
 }
 
 function updateBulkFeedback(text) {
@@ -375,12 +424,15 @@ function setResultView(view) {
 
 function setActionButtons(enabled) {
   [
-    "copyBtn",
     "toggleViewBtn",
-    "shareBtn",
+    "shareOpenBtn",
+    "shareWhatsBtn",
+    "shareLinkBtn",
+    "shareCsvBtn",
     "shareResultPngBtn",
     "shareBracketPngBtn",
     "swapHomeBtn",
+    "generateBracketBtn",
   ].forEach((id) => {
     const el = $(id);
     if (el) el.disabled = !enabled;
@@ -390,6 +442,8 @@ function setActionButtons(enabled) {
 function resetResults() {
   state.lastDraw = null;
   $("resultsPanel")?.classList.add("d-none");
+  $("bracketSection")?.classList.add("d-none");
+  $("shareSection")?.classList.add("d-none");
   setActionButtons(false);
   setResultView("cards");
 
@@ -399,6 +453,7 @@ function resetResults() {
   if (tbody) tbody.innerHTML = "";
   const meta = $("resultMeta");
   if (meta) meta.textContent = "";
+  setText("shareStatus", "");
 
   resetBracket();
   $("rrBox")?.classList.add("d-none");
@@ -406,8 +461,36 @@ function resetResults() {
 
 function showResultsPanel() {
   $("resultsPanel")?.classList.remove("d-none");
+  $("bracketSection")?.classList.add("d-none");
+  $("shareSection")?.classList.add("d-none");
   $("resultsPanel")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
+
+function setDrawEnabled() {
+  const drawBtn = $("drawBtn");
+  const hint = $("drawHint");
+  const emptyHint = $("emptyHint");
+  const enabled = state.participants.length >= 2;
+  if (drawBtn) drawBtn.disabled = !enabled;
+  if (hint) hint.classList.toggle("d-none", enabled);
+  if (emptyHint) emptyHint.classList.toggle("d-none", enabled);
+}
+
+function updateOptionSummary() {
+  const target = $("optionSummary");
+  if (!target) return;
+  const format = $("formatSelect")?.value || "bracket";
+  const balance = $("balanceSelect")?.value || "random";
+  const mode = $("modeSelect")?.value || "all";
+  const formatLabel = format === "round_robin" ? "Todos contra todos" : "Mata-mata";
+  const balanceLabel = balance === "tiers" ? "Equilibrado" : "Aleatório";
+  let modeLabel = "Todos";
+  if (mode === "clubs") modeLabel = "Só clubes";
+  if (mode === "national") modeLabel = "Só seleções";
+  if (mode === "top") modeLabel = "Top N (overall)";
+  target.textContent = `Formato: ${formatLabel} | Equilíbrio: ${balanceLabel} | Times: ${modeLabel}`;
+}
+
 
 function computeEquilibrium(drawRows) {
   const overalls = drawRows.map((r) => Number(r.overall || 0)).filter((n) => Number.isFinite(n));
@@ -421,8 +504,8 @@ function computeEquilibrium(drawRows) {
 }
 
 async function copyToClipboard(text) {
-  if (!navigator.clipboard?.writeText) throw new Error("Clipboard indisponível.");
-  await navigator.clipboard.writeText(text);
+  const ok = await copyTextWithFallback(text);
+  if (!ok) throw new Error("Clipboard indisponível.");
 }
 
 function buildWhatsAppText(payload) {
@@ -439,7 +522,11 @@ function buildWhatsAppText(payload) {
 async function copyWhatsApp() {
   if (!state.lastDraw) return;
   try {
-    await copyToClipboard(buildWhatsAppText(state.lastDraw));
+    const ok = await copyTextWithFallback(buildWhatsAppText(state.lastDraw));
+    if (ok) {
+      setText("shareStatus", "Texto copiado.");
+      announce("Copiado para a área de transferência.");
+    } else throw new Error("copy_failed");
   } catch {
     showError("Não foi possível copiar. Verifique as permissões do navegador.");
   }
@@ -454,7 +541,11 @@ async function copyCsv() {
   });
   const text = ["PARTICIPANTE;TIME;CATEGORIA;OVR;ATT;MID;DEF", ...lines].join("\n");
   try {
-    await copyToClipboard(text);
+    const ok = await copyTextWithFallback(text);
+    if (ok) {
+      setText("shareStatus", "CSV copiado.");
+      announce("CSV copiado.");
+    } else throw new Error("copy_failed");
   } catch {
     showError("Não foi possível copiar. Verifique as permissões do navegador.");
   }
@@ -530,9 +621,9 @@ function getExcludeTeams() {
   const avoidRepeat3 = Boolean($("avoidRepeat3Toggle")?.checked);
   if (!avoidRepeat && !avoidRepeat3) return [];
 
-  const history = JSON.parse(localStorage.getItem("lastDrawTeamsHistory") || "[]");
+  const history = JSON.parse(localStorage.getItem(storageKey("lastDrawTeamsHistory")) || "[]");
   const flatHistory = history.flat();
-  const last = JSON.parse(localStorage.getItem("lastDrawTeams") || "[]");
+  const last = JSON.parse(localStorage.getItem(storageKey("lastDrawTeams")) || "[]");
 
   if (avoidRepeat3) return flatHistory;
   return last;
@@ -541,10 +632,12 @@ function getExcludeTeams() {
 async function drawNow() {
   clearError();
 
-  if (!state.participants.length) {
-    showError("Adicione ao menos 1 jogador.");
+  if (state.participants.length < 2) {
+    showError("Adicione ao menos 2 jogadores.");
     return;
   }
+
+  $("loadingOverlay")?.classList.add("active");
 
   const filters = buildFiltersFromUI();
   const balanceMode = $("balanceSelect")?.value || "random";
@@ -569,12 +662,14 @@ async function drawNow() {
       body: JSON.stringify(payload),
     });
   } catch {
+    $("loadingOverlay")?.classList.remove("active");
     showError("Falha de comunicação com o servidor.");
     return;
   }
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
+    $("loadingOverlay")?.classList.remove("active");
     showError(data.error || "Erro ao sortear.");
     return;
   }
@@ -585,20 +680,17 @@ async function drawNow() {
   }
 
   const used = (data.draw || []).map((r) => r.team_id).filter(Boolean);
-  localStorage.setItem("lastDrawTeams", JSON.stringify(used));
-  const hist = JSON.parse(localStorage.getItem("lastDrawTeamsHistory") || "[]");
+  localStorage.setItem(storageKey("lastDrawTeams"), JSON.stringify(used));
+  const hist = JSON.parse(localStorage.getItem(storageKey("lastDrawTeamsHistory")) || "[]");
   hist.unshift(used);
-  localStorage.setItem("lastDrawTeamsHistory", JSON.stringify(hist.slice(0, 3)));
+  localStorage.setItem(storageKey("lastDrawTeamsHistory"), JSON.stringify(hist.slice(0, 3)));
 
   renderResults(data, { live: Boolean($("liveModeToggle")?.checked) });
+  $("loadingOverlay")?.classList.remove("active");
   showResultsPanel();
 
-  if (format === "round_robin") {
-    await runRoundRobin();
-  } else {
-    $("rrBox")?.classList.add("d-none");
-    buildBracket(data.draw || [], balanceMode);
-  }
+  $("bracketSection")?.classList.add("d-none");
+  $("shareSection")?.classList.add("d-none");
 }
 
 function renderResults(payload, { live } = { live: false }) {
@@ -606,6 +698,8 @@ function renderResults(payload, { live } = { live: false }) {
   setActionButtons(true);
 
   $("resultsPanel")?.classList.remove("d-none");
+  $("bracketSection")?.classList.add("d-none");
+  $("shareSection")?.classList.add("d-none");
 
   const { avg, diff, label } = computeEquilibrium(drawRows);
   const bits = [];
@@ -636,27 +730,48 @@ function renderResults(payload, { live } = { live: false }) {
     card.style.setProperty("--badge-soft", colors.soft);
     card.style.animationDelay = live ? `${idx * 120}ms` : `${idx * 35}ms`;
 
-    card.innerHTML = `
-      <div class="result-head">
-        <div class="team-badge">${badge}</div>
-        <div>
-          <div class="player">${row.participant || ""}</div>
-          <div class="team">${row.team_name || ""}</div>
-          <div class="muted small">${labelText}${row.overall ? ` · OVR ${row.overall}` : ""}</div>
-        </div>
-      </div>
-    `;
+    const head = document.createElement("div");
+    head.className = "result-head";
+
+    const badgeEl = document.createElement("div");
+    badgeEl.className = "team-badge";
+    badgeEl.textContent = badge;
+
+    const info = document.createElement("div");
+    const playerEl = document.createElement("div");
+    playerEl.className = "player";
+    playerEl.textContent = row.participant || "";
+    const teamEl = document.createElement("div");
+    teamEl.className = "team";
+    teamEl.textContent = row.team_name || "";
+    const metaEl = document.createElement("div");
+    metaEl.className = "muted small";
+    metaEl.textContent = `${labelText}${row.overall ? ` · OVR ${row.overall}` : ""}`;
+
+    info.appendChild(playerEl);
+    info.appendChild(teamEl);
+    info.appendChild(metaEl);
+
+    head.appendChild(badgeEl);
+    head.appendChild(info);
+    card.appendChild(head);
+
     cards?.appendChild(card);
 
     const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${row.participant || ""}</td>
-      <td>${row.team_name || ""}</td>
-      <td>${row.overall ?? ""}</td>
-      <td>${row.attack ?? ""}</td>
-      <td>${row.midfield ?? ""}</td>
-      <td>${row.defence ?? row.defense ?? ""}</td>
-    `;
+    const cells = [
+      row.participant || "",
+      row.team_name || "",
+      row.overall ?? "",
+      row.attack ?? "",
+      row.midfield ?? "",
+      row.defence ?? row.defense ?? "",
+    ];
+    cells.forEach((value) => {
+      const td = document.createElement("td");
+      td.textContent = value;
+      tr.appendChild(td);
+    });
     tbody?.appendChild(tr);
   });
 
@@ -834,11 +949,21 @@ function renderEntry(entry, isWinner) {
     return btn;
   }
 
-  btn.innerHTML = `
-    <div class="match-title">${entry.participant}</div>
-    <div class="match-team">${entry.team_name}</div>
-    ${entry.overall ? `<div class="match-meta">OVR ${entry.overall}</div>` : ""}
-  `;
+  const title = document.createElement("div");
+  title.className = "match-title";
+  title.textContent = entry.participant;
+  const team = document.createElement("div");
+  team.className = "match-team";
+  team.textContent = entry.team_name;
+  btn.appendChild(title);
+  btn.appendChild(team);
+
+  if (entry.overall) {
+    const meta = document.createElement("div");
+    meta.className = "match-meta";
+    meta.textContent = `OVR ${entry.overall}`;
+    btn.appendChild(meta);
+  }
   return btn;
 }
 
@@ -911,7 +1036,10 @@ function renderBracket() {
   container.innerHTML = "";
 
   if (!state.lastDraw) {
-    container.innerHTML = "<div class=\"muted\">Gere o sorteio para montar o chaveamento.</div>";
+    const msg = document.createElement("div");
+    msg.className = "muted";
+    msg.textContent = "Gere o sorteio para montar o chaveamento.";
+    container.appendChild(msg);
     updateBracketStatus();
     drawBracketLines();
     return;
@@ -928,7 +1056,10 @@ function renderBracket() {
   }
 
   if (bracketState.rounds.length === 0) {
-    container.innerHTML = "<div class=\"muted\">Clique em “Sortear” para montar o chaveamento.</div>";
+    const msg = document.createElement("div");
+    msg.className = "muted";
+    msg.textContent = 'Clique em "Sortear" para montar o chaveamento.';
+    container.appendChild(msg);
     updateBracketStatus();
     drawBracketLines();
     return;
@@ -1045,14 +1176,19 @@ async function runRoundRobin() {
   rrMeta.textContent = `${data.players} jogadores · ${data.total_matches} partidas`;
   (data.matches || []).forEach((m, idx) => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${idx + 1}</td>
-      <td>${m.a?.participant || ""}</td>
-      <td>${m.a?.team_name || ""}</td>
-      <td>vs</td>
-      <td>${m.b?.participant || ""}</td>
-      <td>${m.b?.team_name || ""}</td>
-    `;
+    const cells = [
+      idx + 1,
+      m.a?.participant || "",
+      m.a?.team_name || "",
+      "vs",
+      m.b?.participant || "",
+      m.b?.team_name || "",
+    ];
+    cells.forEach((value) => {
+      const td = document.createElement("td");
+      td.textContent = value;
+      tr.appendChild(td);
+    });
     rrTbody.appendChild(tr);
   });
 
@@ -1123,6 +1259,8 @@ function updateRoomControls() {
   if (createBtn) createBtn.textContent = state.room.code ? "Salvar sala" : "Criar sala";
   if (copyBtn) copyBtn.disabled = !state.room.url;
   if (input && state.room.code) input.value = state.room.code;
+  const pill = $("roomStatusTop");
+  if (pill) pill.textContent = state.room.code ? `Sala: ${state.room.code}` : "Sala: offline";
 }
 
 async function createShareCode({ forceNew = false, silent = false } = {}) {
@@ -1181,6 +1319,7 @@ async function joinShareCode(value) {
   if ($("avoidRepeat3Toggle")) $("avoidRepeat3Toggle").checked = Boolean(data.ui?.avoid_repeat_3);
   if ($("liveModeToggle")) $("liveModeToggle").checked = Boolean(data.ui?.live_mode);
   toggleTopN();
+  updateOptionSummary();
 
   state.participants = Array.isArray(data.participants) ? data.participants : [];
   renderParticipants();
@@ -1196,10 +1335,8 @@ async function joinShareCode(value) {
     state.lastDraw = data;
     renderResults(data, { live: false });
     showResultsPanel();
-
-    const format = $("formatSelect")?.value || "bracket";
-    if (format === "round_robin") await runRoundRobin();
-    else buildBracket(data.draw || [], $("balanceSelect")?.value || "random");
+    $("bracketSection")?.classList.add("d-none");
+    $("shareSection")?.classList.add("d-none");
   } else {
     state.lastDraw = null;
     resetResults();
@@ -1223,8 +1360,13 @@ function setupRoomDialog() {
     updateRoomControls();
     if (state.room.code) setText("roomStatus", `Sala atual: ${state.room.code}`);
     dialog.showModal();
+    $("roomCodeInput")?.focus();
   });
-  closeBtn?.addEventListener("click", () => dialog.close());
+  closeBtn?.addEventListener("click", () => {
+    dialog.close();
+    openBtn?.focus();
+  });
+  dialog.addEventListener("close", () => openBtn?.focus());
 
   joinBtn?.addEventListener("click", async () => {
     clearError();
@@ -1246,6 +1388,7 @@ function setupRoomDialog() {
     try {
       await copyToClipboard(state.room.url);
       setText("roomStatus", `Link copiado (${state.room.code})`);
+      announce("Link copiado.");
     } catch {
       setText("roomStatus", `Sala: ${state.room.code}`);
     }
@@ -1265,18 +1408,28 @@ async function init() {
   $("datasetFc25Btn")?.addEventListener("click", () => setDataset("fc25"));
   $("datasetNbaBtn")?.addEventListener("click", () => setDataset("nba"));
 
-  $("presetSelect")?.addEventListener("change", (e) => applyPreset(e.target.value));
-  $("modeSelect")?.addEventListener("change", toggleTopN);
+  $("presetSelect")?.addEventListener("change", (e) => {
+    applyPreset(e.target.value);
+    updateOptionSummary();
+  });
+  $("modeSelect")?.addEventListener("change", () => {
+    toggleTopN();
+    updateOptionSummary();
+  });
 
   const formatSelect = $("formatSelect");
   formatSelect?.addEventListener("change", async () => {
-    if (!state.lastDraw) return;
+    updateOptionSummary();
+    const bracketSection = $("bracketSection");
+    if (!state.lastDraw || !bracketSection || bracketSection.classList.contains("d-none")) return;
     if (formatSelect.value === "round_robin") await runRoundRobin();
     else buildBracket(state.lastDraw.draw || [], $("balanceSelect")?.value || "random");
   });
 
   $("balanceSelect")?.addEventListener("change", () => {
-    if (!state.lastDraw) return;
+    updateOptionSummary();
+    const bracketSection = $("bracketSection");
+    if (!state.lastDraw || !bracketSection || bracketSection.classList.contains("d-none")) return;
     const format = $("formatSelect")?.value || "bracket";
     if (format === "bracket") buildBracket(state.lastDraw.draw || [], $("balanceSelect")?.value || "random");
   });
@@ -1379,13 +1532,51 @@ async function init() {
   $("drawBtn")?.addEventListener("click", drawNow);
 
   $("toggleViewBtn")?.addEventListener("click", () => setResultView(state.resultView === "table" ? "cards" : "table"));
-  $("copyBtn")?.addEventListener("click", copyWhatsApp);
-  $("shareBtn")?.addEventListener("click", copyCsv);
 
   $("shareResultPngBtn")?.addEventListener("click", () => exportPng("shareCapture", "sorteio.png"));
   $("shareBracketPngBtn")?.addEventListener("click", () => exportPng("bracketWrap", "chaveamento.png"));
 
   $("swapHomeBtn")?.addEventListener("click", swapHomeAway);
+  $("generateBracketBtn")?.addEventListener("click", async () => {
+    if (!state.lastDraw) return;
+    $("bracketSection")?.classList.remove("d-none");
+    $("shareSection")?.classList.remove("d-none");
+    const format = $("formatSelect")?.value || "bracket";
+    if (format === "round_robin") await runRoundRobin();
+    else {
+      $("rrBox")?.classList.add("d-none");
+      buildBracket(state.lastDraw.draw || [], $("balanceSelect")?.value || "random");
+    }
+  });
+
+  $("shareOpenBtn")?.addEventListener("click", () => {
+    const dialog = $("shareDialog");
+    if (!dialog) return;
+    dialog.showModal();
+    $("shareWhatsBtn")?.focus();
+  });
+
+  $("shareCloseBtn")?.addEventListener("click", () => {
+    $("shareDialog")?.close();
+    $("shareOpenBtn")?.focus();
+  });
+
+  $("shareWhatsBtn")?.addEventListener("click", copyWhatsApp);
+  $("shareCsvBtn")?.addEventListener("click", copyCsv);
+  $("shareLinkBtn")?.addEventListener("click", async () => {
+    clearError();
+    if (!state.room.url) {
+      const created = await createShareCode();
+      if (!created) return;
+    }
+    try {
+      await copyToClipboard(state.room.url);
+      setText("shareStatus", `Link copiado (${state.room.code})`);
+      announce("Link copiado.");
+    } catch {
+      setText("shareStatus", `Sala: ${state.room.code}`);
+    }
+  });
   $("nextRoundBtn")?.addEventListener("click", () => {
     const lastIndex = bracketState.rounds.length - 1;
     if (lastIndex >= 0) maybeAdvance(lastIndex);
@@ -1399,6 +1590,7 @@ async function init() {
 
   setDataset("fc25");
   toggleTopN();
+  updateOptionSummary();
   renderParticipants();
   renderBracket();
   resetResults();

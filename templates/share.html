@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Sorteio compartilhado | Sorteio Pro</title>
+  <title>Sorteio compartilhado | Sorteio FC</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -58,7 +58,7 @@
   <div class="container py-5">
     <div class="glass p-4">
       <div class="brand-title mb-2">Sorteio compartilhado</div>
-      <div class="muted mb-4">Resultado gerado por Sorteio Pro.</div>
+      <div class="muted mb-4">Resultado gerado por Sorteio FC.</div>
       <div class="table-responsive">
         <table class="table table-striped align-middle">
           <thead>
@@ -97,15 +97,20 @@
     }
     draw.forEach((row) => {
       const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${row.participant || ""}</td>
-        <td>${row.team_name || ""}</td>
-        <td>${categoryLabel(row.team_type, row.gender)}</td>
-        <td>${row.overall ?? ""}</td>
-        <td>${row.attack ?? ""}</td>
-        <td>${row.midfield ?? ""}</td>
-        <td>${row.defence ?? row.defense ?? ""}</td>
-      `;
+      const cells = [
+        row.participant || "",
+        row.team_name || "",
+        categoryLabel(row.team_type, row.gender),
+        row.overall ?? "",
+        row.attack ?? "",
+        row.midfield ?? "",
+        row.defence ?? row.defense ?? "",
+      ];
+      cells.forEach((value) => {
+        const td = document.createElement("td");
+        td.textContent = value;
+        tr.appendChild(td);
+      });
       tbody.appendChild(tr);
     });
   </script>

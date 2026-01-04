@@ -80,7 +80,7 @@
 
     body.theme-dark::before { opacity: 0.08; }
 
-    .shell { max-width: 1180px; margin: 0 auto; padding: 22px 18px 70px; position: relative; z-index: 1; }
+    .shell { max-width: 1180px; margin: 0 auto; padding: 16px 18px 60px; position: relative; z-index: 1; }
 
     .glass {
       background: linear-gradient(180deg, var(--card), var(--card-2));
@@ -110,7 +110,17 @@
     }
     .brand-title { font-family: "Fraunces", serif; font-size: 1.2rem; letter-spacing: 0.01em; }
     .brand-sub { color: rgba(255, 255, 255, 0.72); font-size: 0.92rem; }
-    .topbar-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .topbar-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+    .room-pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      background: rgba(255, 255, 255, 0.08);
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.9);
+    }
 
     .muted { color: var(--muted); }
 
@@ -137,8 +147,8 @@
       align-items: start;
     }
 
-    .panel { padding: 14px; }
-    .panel h1 { font-family: "Fraunces", serif; font-size: 1.7rem; margin: 6px 0; }
+    .panel { padding: 12px; }
+    .panel h1 { font-family: "Fraunces", serif; font-size: 1.45rem; margin: 4px 0; }
     .kicker { font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.78rem; color: var(--muted); }
     .section-title { font-weight: 800; font-size: 1rem; margin: 0; }
     .divider { height: 1px; background: rgba(12, 27, 51, 0.08); margin: 14px 0; }
@@ -239,6 +249,52 @@
     .dialog-body { padding: 14px; display: grid; gap: 10px; }
     .dialog-close { border: 1px solid var(--stroke); background: transparent; border-radius: 999px; width: 34px; height: 34px; font-weight: 900; color: inherit; }
 
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(7, 12, 24, 0.55);
+      backdrop-filter: blur(6px);
+      z-index: 40;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    .loading-overlay.active { opacity: 1; pointer-events: auto; }
+    .loading-card {
+      padding: 18px 22px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.75));
+      color: #e2e8f0;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      min-width: 260px;
+      text-align: center;
+      box-shadow: 0 24px 50px rgba(2, 6, 23, 0.6);
+    }
+    .loading-bars {
+      display: grid;
+      grid-template-columns: repeat(5, 8px);
+      gap: 8px;
+      justify-content: center;
+      height: 34px;
+      margin: 10px 0 6px;
+    }
+    .loading-bars span {
+      width: 8px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, var(--accent), var(--accent-2));
+      animation: pulse 0.9s ease-in-out infinite;
+    }
+    .loading-bars span:nth-child(2) { animation-delay: 0.1s; }
+    .loading-bars span:nth-child(3) { animation-delay: 0.2s; }
+    .loading-bars span:nth-child(4) { animation-delay: 0.3s; }
+    .loading-bars span:nth-child(5) { animation-delay: 0.4s; }
+    @keyframes pulse {
+      0%, 100% { transform: scaleY(0.45); opacity: 0.5; }
+      50% { transform: scaleY(1); opacity: 1; }
+    }
+
     @media (max-width: 920px) {
       .grid { grid-template-columns: 1fr; }
       .topbar { flex-direction: column; align-items: flex-start; }
@@ -259,8 +315,8 @@
         </div>
       </div>
       <div class="topbar-actions">
+        <span id="roomStatusTop" class="room-pill">Sala: offline</span>
         <button id="roomOpenBtn" class="btn btn-ghost btn-sm" type="button">Sala</button>
-        <button id="themeToggleBtn" class="btn btn-ghost btn-sm" type="button">Tema escuro</button>
       </div>
     </header>
 
@@ -268,7 +324,7 @@
       <section class="glass panel" id="setupPanel">
         <div>
           <div class="kicker" id="heroKicker">Sorteio para EA FC 25 e NBA 2K25</div>
-          <h1 id="heroTitle">Sorteio rápido e justo</h1>
+          <h1 id="heroTitle">Sorteio FC</h1>
           <div class="muted" id="heroSubtitle">Adicione os jogadores, ajuste as opções e clique em “Sortear”.</div>
         </div>
 
@@ -289,17 +345,24 @@
           <div id="bulkFeedback" class="muted small mt-1"></div>
           <div class="action-row compact mt-2">
             <button id="importBtn" class="btn btn-ghost btn-sm" type="button">Adicionar lista</button>
-            <button id="pasteBtn" class="btn btn-ghost btn-sm" type="button">Colar do clipboard</button>
-            <button id="undoBtn" class="btn btn-ghost btn-sm" type="button">Desfazer último</button>
-            <button id="sortParticipantsBtn" class="btn btn-ghost btn-sm" type="button">Ordenar A–Z</button>
-            <button id="clearParticipantsBtn" class="btn btn-ghost btn-sm" type="button">Limpar</button>
+            <details class="more-actions">
+              <summary class="btn btn-ghost btn-sm">Mais ações</summary>
+              <div class="more-menu">
+                <button id="pasteBtn" class="btn btn-ghost btn-sm" type="button">Colar do clipboard</button>
+                <button id="undoBtn" class="btn btn-ghost btn-sm" type="button">Desfazer último</button>
+                <button id="sortParticipantsBtn" class="btn btn-ghost btn-sm" type="button">Ordenar A–Z</button>
+                <button id="clearParticipantsBtn" class="btn btn-ghost btn-sm" type="button">Limpar</button>
+              </div>
+            </details>
           </div>
         </details>
         <div id="participantsList" class="chip-list"></div>
+        <div id="emptyHint" class="muted small mt-2">Adicione ao menos 2 jogadores para liberar o sorteio.</div>
 
         <div class="divider"></div>
 
         <div class="section-title">Opções</div>
+        <div id="optionSummary" class="muted small mt-1"></div>
         <div class="dataset-tabs mt-2" role="tablist" aria-label="Jogo">
           <button class="dataset-tab active" id="datasetFc25Btn" data-dataset="fc25" type="button">EA FC 25</button>
           <button class="dataset-tab" id="datasetNbaBtn" data-dataset="nba" type="button">NBA 2K25</button>
@@ -366,6 +429,7 @@
         <div class="action-row mt-3">
           <button id="drawBtn" class="btn btn-accent" type="button">Sortear</button>
         </div>
+        <div id="drawHint" class="muted small mt-2 d-none">Adicione ao menos 2 jogadores para sortear.</div>
 
         <div id="errorBox" class="alert alert-danger mt-3 d-none"></div>
       </section>
@@ -374,16 +438,7 @@
         <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
           <div class="section-title mb-0">Resultado</div>
           <div class="action-row compact">
-            <button id="copyBtn" class="btn btn-ghost btn-sm" type="button" disabled>Copiar (WhatsApp)</button>
-            <details class="more-actions">
-              <summary class="btn btn-ghost btn-sm">Compartilhar</summary>
-              <div class="more-menu">
-                <button id="toggleViewBtn" class="btn btn-ghost btn-sm" type="button" disabled>Ver tabela</button>
-                <button id="shareBtn" class="btn btn-ghost btn-sm" type="button" disabled>Copiar CSV</button>
-                <button id="shareResultPngBtn" class="btn btn-ghost btn-sm" type="button" disabled>PNG do sorteio</button>
-                <button id="shareBracketPngBtn" class="btn btn-ghost btn-sm" type="button" disabled>PNG do chaveamento</button>
-              </div>
-            </details>
+            <button id="toggleViewBtn" class="btn btn-ghost btn-sm" type="button" disabled>Ver tabela</button>
           </div>
         </div>
 
@@ -408,39 +463,54 @@
           </div>
         </div>
 
-        <div class="divider"></div>
+        <div class="action-row mt-3">
+          <button id="generateBracketBtn" class="btn btn-accent" type="button">Gerar chaveamento</button>
+        </div>
 
-        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
-          <div class="section-title mb-0">Chaveamento</div>
-          <div class="action-row compact">
-            <button id="swapHomeBtn" class="btn btn-ghost btn-sm" type="button" disabled>Inverter mandos</button>
-            <button id="nextRoundBtn" class="btn btn-ghost btn-sm d-none" type="button">Avançar fase</button>
+        <div id="bracketSection" class="mt-4 d-none">
+          <div class="divider"></div>
+          <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
+            <div class="section-title mb-0">Chaveamento</div>
+            <div class="action-row compact">
+              <button id="swapHomeBtn" class="btn btn-ghost btn-sm" type="button" disabled>Inverter mandos</button>
+              <button id="nextRoundBtn" class="btn btn-ghost btn-sm d-none" type="button">Avançar fase</button>
+            </div>
+          </div>
+          <div id="bracketStatus" class="muted small mt-2"></div>
+
+          <div class="bracket-wrap mt-2" id="bracketWrap">
+            <svg class="bracket-lines" id="bracketLines"></svg>
+            <div id="bracketContainer" class="bracket-grid"></div>
+          </div>
+
+          <div class="glass p-3 mt-3 d-none" id="rrBox">
+            <div class="section-title">Todos contra todos</div>
+            <div class="muted small mb-2" id="rrMeta"></div>
+            <div class="table-responsive">
+              <table class="table table-striped align-middle">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Jogador A</th>
+                    <th>Time A</th>
+                    <th>vs</th>
+                    <th>Jogador B</th>
+                    <th>Time B</th>
+                  </tr>
+                </thead>
+                <tbody id="rrTbody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
-        <div id="bracketStatus" class="muted small mt-2"></div>
 
-        <div class="bracket-wrap mt-2" id="bracketWrap">
-          <svg class="bracket-lines" id="bracketLines"></svg>
-          <div id="bracketContainer" class="bracket-grid"></div>
-        </div>
-
-        <div class="glass p-3 mt-3 d-none" id="rrBox">
-          <div class="section-title">Todos contra todos</div>
-          <div class="muted small mb-2" id="rrMeta"></div>
-          <div class="table-responsive">
-            <table class="table table-striped align-middle">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Jogador A</th>
-                  <th>Time A</th>
-                  <th>vs</th>
-                  <th>Jogador B</th>
-                  <th>Time B</th>
-                </tr>
-              </thead>
-              <tbody id="rrTbody"></tbody>
-            </table>
+        <div id="shareSection" class="mt-3 d-none">
+          <div class="divider"></div>
+          <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
+            <div class="section-title mb-0">Compartilhar</div>
+            <div class="action-row compact">
+              <button id="shareOpenBtn" class="btn btn-ghost btn-sm" type="button" disabled>Compartilhar</button>
+            </div>
           </div>
         </div>
       </section>
@@ -462,9 +532,44 @@
         <button id="roomCreateBtn" class="btn btn-accent" type="button">Criar sala</button>
         <button id="roomCopyLinkBtn" class="btn btn-ghost" type="button">Copiar link</button>
       </div>
+      <div class="action-row">
+        <button id="themeToggleBtn" class="btn btn-ghost btn-sm" type="button">Tema escuro</button>
+      </div>
       <div id="roomStatus" class="muted small"></div>
     </div>
   </dialog>
+
+  <dialog id="shareDialog" class="room-dialog">
+    <div class="dialog-head">
+      <div class="section-title">Compartilhar</div>
+      <button id="shareCloseBtn" class="dialog-close" type="button" aria-label="Fechar">×</button>
+    </div>
+    <div class="dialog-body">
+      <div class="muted small">Envie o resultado e o chaveamento com um clique.</div>
+      <div class="action-row">
+        <button id="shareWhatsBtn" class="btn btn-ghost" type="button" disabled>Copiar texto (WhatsApp)</button>
+        <button id="shareLinkBtn" class="btn btn-ghost" type="button" disabled>Copiar link</button>
+        <button id="shareCsvBtn" class="btn btn-ghost" type="button" disabled>Copiar CSV</button>
+      </div>
+      <div class="action-row">
+        <button id="shareResultPngBtn" class="btn btn-ghost" type="button" disabled>PNG do sorteio</button>
+        <button id="shareBracketPngBtn" class="btn btn-ghost" type="button" disabled>PNG do chaveamento</button>
+      </div>
+      <div id="shareStatus" class="muted small"></div>
+    </div>
+  </dialog>
+
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-card">
+      <div class="small text-uppercase">Sorteio FC</div>
+      <div class="loading-bars" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <div class="small">Aquecendo o estádio e a quadra…</div>
+    </div>
+  </div>
+
+  <div id="statusAnnouncer" class="visually-hidden" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="/static/app.js"></script>
